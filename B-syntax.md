@@ -44,7 +44,7 @@ Any operation in Urbit ultimately results in a value.  Much like machine languag
 
 ##  Nouns
 
-Think about a child persistently asking you what a thing is made of.  At first, you may respond, "plastic", or "metal".  Eventually, the child may wear you down to a more fundamental level:  atoms and molecules (bonded atoms).
+Think about a child persistently asking you what a thing is made of.  At first, you may respond, “plastic”, or “metal”.  Eventually, the child may wear you down to a more fundamental level:  atoms and molecules (bonded atoms).
 
 In a very similar sense, everything in a Hoon program is an atom or a bond.  Metaphorically, a Hoon program is a complex molecule, a digital chemistry that describes one mathematical representation of data.
 
@@ -73,6 +73,8 @@ For instance, to change the representation of a regular decimal number like `32`
 ```
 
 (The tic marks are a shorthand which we'll explain later.)
+
+Aura values are all designed to be [URL-safe](https://developers.google.com/maps/url-encoding), so the European-style thousands separator `.` dot is used instead of the English `,` com.  `1.000` is one thousand, not `1.0` one with a fractional part of zero.
 
 While there are dozens of auras for specialized applications, here are the most important ones for you to know:
 

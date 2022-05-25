@@ -1,6 +1,6 @@
 ---
 title: Gates
-nodes: 100, 103
+nodes: 111, 115, 120
 objectives:
   - "Explain what an Urbit ship is."
   - "Distinguish a fakeship from a liveship."
