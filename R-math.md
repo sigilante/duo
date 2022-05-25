@@ -245,32 +245,41 @@ The Hoon standard library at the current time omits many [transcendental functio
 
 - Produce an exponentiation function `++pow-n` which operates on integer `@rs` only.
 
-  ```hoon
-   ++  pow-n
-    ::  restricted power, based on integers only
-    |=  [x=@rs n=@rs]
-    ^-  @rs
-    ?:  =(n .0)  .1
-    =/  p  x
-    |-  ^-  @rs
-    ?:  (lth:rs n .2)  p
-    $(n (sub:rs n .1), p (mul:rs p x))
-  ```
+    ```hoon
+    ++  pow-n
+      ::  restricted power, based on integers only
+      |=  [x=@rs n=@rs]
+      ^-  @rs
+      ?:  =(n .0)  .1
+      =/  p  x
+      |-  ^-  @rs
+      ?:  (lth:rs n .2)  p
+      $(n (sub:rs n .1), p (mul:rs p x))
+    ```
 
 - Using both of the above, produce the `++sine` function, defined by
 
-  <img src="https://latex.codecogs.com/svg.image?\large&space;\sin(x)&space;=&space;\sum_{n=0}^\infty&space;\frac{(-1)^n}{(2n&plus;1)!}x^{2n&plus;1}=&space;x&space;-&space;\frac{x^3}{3!}&space;&plus;&space;\frac{x^5}{5!}&space;-&space;\frac{x^7}{7!}&space;&plus;&space;\cdots" title="https://latex.codecogs.com/svg.image?\large \sin(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n+1)!}x^{2n+1}= x - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} + \cdots" />
+    <img src="https://latex.codecogs.com/svg.image?\large&space;\sin(x)&space;=&space;\sum_{n=0}^\infty&space;\frac{(-1)^n}{(2n&plus;1)!}x^{2n&plus;1}=&space;x&space;-&space;\frac{x^3}{3!}&space;&plus;&space;\frac{x^5}{5!}&space;-&space;\frac{x^7}{7!}&space;&plus;&space;\cdots" title="https://latex.codecogs.com/svg.image?\large \sin(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n+1)!}x^{2n+1}= x - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} + \cdots" />
 
-  <!--
-  \sin(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n+1)!}x^{2n+1}= x - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} + \cdots
-  -->
+    <!--
+    \sin(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n+1)!}x^{2n+1}= x - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} + \cdots
+    -->
 
-  ```hoon
-
-  ```
-
-`++pow-n`
-
+    ```hoon
+    ++  sine
+      ::  sin x = x - x^3/3! + x^5/5! - x^7/7! + x^9/9! - ...
+      |=  x=@rs
+      ^-  @rs
+      =/  rtol  .1e-5
+      =/  p   .0
+      =/  po  .-1
+      =/  i   .0
+      |-  ^-  @rs
+      ?:  (lth:rs (absolute (sub:rs po p)) rtol)  p
+      =/  ii  (add:rs (mul:rs .2 i) .1)
+      =/  term  (mul:rs (pow-n .-1 i) (div:rs (pow-n x ii) (factorial ii)))
+      $(i (add:rs i .1), p (add:rs p term), po p)
+    ```
 
 - Implement `++cosine` and `++tangent`.
 
@@ -288,13 +297,13 @@ The Hoon standard library at the current time omits many [transcendental functio
 
 - As a stretch exercise, look up definitions for [exp (e^x)](https://en.wikipedia.org/wiki/Exponentiation#The_exponential_function) and [natural logarithm](https://en.wikipedia.org/wiki/Natural_logarithm), and implement these.  You can implement a general-purpose exponentiation function using the formula
 
-<img src="https://latex.codecogs.com/svg.image?\large&space;x^n&space;=&space;\exp(n&space;\,\text{ln}\,&space;x)" title="https://latex.codecogs.com/svg.image?\large x^n = \exp(n \,\text{ln}\, x)" />
+    <img src="https://latex.codecogs.com/svg.image?\large&space;x^n&space;=&space;\exp(n&space;\,\text{ln}\,&space;x)" title="https://latex.codecogs.com/svg.image?\large x^n = \exp(n \,\text{ln}\, x)" />
 
-<!--
-x^n = \exp(n \,\text{ln}\, x)
--->
+    <!--
+    x^n = \exp(n \,\text{ln}\, x)
+    -->
 
-(We will use these in subsequent examples.)
+    (We will use these in subsequent examples.)
 
 
 ##  Date & Time Mathematics
