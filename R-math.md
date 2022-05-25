@@ -2,16 +2,49 @@
 title: Gates
 nodes: 234, 236, 284
 objectives:
-  - "Explain what an Urbit ship is."
-  - "Distinguish a fakeship from a liveship."
-  - "Pronounce ASCII characters per standard Hoon developer practice."
+  - "Review floating-point mathematics including IEEE-754."
+  - "Examine `@r` atomic representation of floating-point values."
+  - "Manipulate and convert floating-point values using the `@r` operations."
+  - "Examine `@s` atomic representation of signed integer values."
+  - "Use `+si` to manipulate `@s` signed integer values."
+  - "Define entropy and its source."
+  - "Utilize `eny` in a random number generator (`og`)."
+  - "Distinguish insecure hashing (`mug`) from secure hashing (`shax` and friends)."
 ---
 
 #   Mathematics
 
 All of the math we've done until this point relied on unsigned integers:  there was no negative value possible, and there were no numbers with a fractional part.  How can we work with mathematics that require more than just bare unsigned integers?
 
-TODO Gödel numbering etc.
+`@u` unsigned integers (whether `@ud` decimal, `@ux` hexadecimal, etc.) simply count upwards by binary place value from zero.  However, if we apply a different interpretive rule to the resulting value, we can treat the integer (in memory) _as if_ it corresponded to a different real value, such as a [negative number](https://en.wikipedia.org/wiki/Integer) or a [number with a fractional part](https://en.wikipedia.org/wiki/Rational_number).  Auras make this straightforward to explore:
+
+```hoon
+> `@ud`1.000.000
+1.000.000
+
+> `@ux`1.000.000
+0xf.4240
+
+> `@ub`1.000.000
+0b1111.0100.0010.0100.0000
+
+> `@sd`1.000.000
+--500.000
+
+> `@rs`1.000.000
+.1.401298e-39
+
+> `@rh`1.000.000
+.~~3.125
+
+> `@t`1.000.000
+'@B\0f'
+```
+
+How can we actually treat other modes of interpreting numbers as mathematical quantities correctly?  That's the subject of this lesson.
+
+(Ultimately, we are using a concept called [Gödel numbering](https://en.wikipedia.org/wiki/G%C3%B6del_numbering) to justify mapping some data to a particular representation as a unique integer.)
+
 
 ##  Floating-Point Mathematics
 
@@ -141,9 +174,9 @@ The `++equ:rs` arm checks for complete equality of two values.  The downside of 
 %.n
 ```
 
-Produce an arm which check for two values to be close to each other by an absolute amount.  It should accept three values:  `a`, `b`, and `atol`.  It should return the result of the following comparison:
+- Produce an arm which check for two values to be close to each other by an absolute amount.  It should accept three values:  `a`, `b`, and `atol`.  It should return the result of the following comparison:
 
-<img src="https://latex.codecogs.com/svg.image?\large&space;|a-b|&space;\leq&space;\texttt{atol}" title="https://latex.codecogs.com/svg.image?\large |a-b| \leq \texttt{atol}" />
+    <img src="https://latex.codecogs.com/svg.image?\large&space;|a-b|&space;\leq&space;\texttt{atol}" title="https://latex.codecogs.com/svg.image?\large |a-b| \leq \texttt{atol}" />
 
 
 ##  Signed Integer Mathematics
@@ -154,8 +187,6 @@ Similar to floating-point representations, [signed integer](https://en.wikipedia
 2. [**One's complement**](https://en.wikipedia.org/wiki/Ones%27_complement).  Use the bitwise `NOT` operation to represent the value, e.g. `0010.1011` for 43₁₀ and `1101.0100` for -43₁₀.  This has the advantage that arithmetic operations are trivial, e.g. 43₁₀-41₁₀ = `0010.1011` + `1101.0110` = `1.0000.0001`, end-around carry the overflow to yield `0000.0010` = 2.  (This is commonly used in hardware.)
 3. [**Offset binary**](https://en.wikipedia.org/wiki/Offset_binary).  This represents a number normally in binary _except_ that it counts from a point other than zero, like `-256`.
 4. [**ZigZag**](https://developers.google.com/protocol-buffers/docs/encoding?hl=en#signed-ints).  Positive signed integers correspond to even atoms of twice their absolute value, and negative signed integers correspond to odd atoms of twice their absolute value minus one.
-
-TODO fix in main docs to ZigZag
 
 There are tradeoffs in compactness of representation and efficiency of mathematical operations.
 
@@ -202,10 +233,68 @@ To recover an unsigned integer from a signed integer, use [`++old:si`](https://u
 - [`++dif:si`](https://urbit.org/docs/hoon/reference/stdlib/3a#difsi), subtraction
 - [`++pro:si`](https://urbit.org/docs/hoon/reference/stdlib/3a#prosi), multiplication
 - [`++fra:si`](https://urbit.org/docs/hoon/reference/stdlib/3a#frasi), division
-- [`++dul:si`](https://urbit.org/docs/hoon/reference/stdlib/3a#dulsi), modulus (remainder after division), b modulo a as `@u` TODO
-- [`++rem:si`](https://urbit.org/docs/hoon/reference/stdlib/3a#remsi), modulus (remainder after division), b modulo a as `@s` TODO
+- [`++rem:si`](https://urbit.org/docs/hoon/reference/stdlib/3a#remsi), modulus (remainder after division), b modulo a as `@s`
 - [`++abs:si`](https://urbit.org/docs/hoon/reference/stdlib/3a#abssi), absolute value
 - [`++cmp:si`](https://urbit.org/docs/hoon/reference/stdlib/3a#synsi), test for greater value (as index, `>` → `--1`, `<` → `-1`, `=` → `--0`)
+
+### Beyond Arithmetic
+
+The Hoon standard library at the current time omits many [transcendental functions](https://en.wikipedia.org/wiki/Transcendental_function), such as the trigonometric functions.  It is useful to implement pure-Hoon versions of these, although they are not as efficient as jetted mathematical code would be.
+
+- Produce a version of `++factorial` which can operate on `@rs` inputs correctly.
+
+- Produce an exponentiation function `++pow-n` which operates on integer `@rs` only.
+
+  ```hoon
+   ++  pow-n
+    ::  restricted power, based on integers only
+    |=  [x=@rs n=@rs]
+    ^-  @rs
+    ?:  =(n .0)  .1
+    =/  p  x
+    |-  ^-  @rs
+    ?:  (lth:rs n .2)  p
+    $(n (sub:rs n .1), p (mul:rs p x))
+  ```
+
+- Using both of the above, produce the `++sine` function, defined by
+
+  <img src="https://latex.codecogs.com/svg.image?\large&space;\sin(x)&space;=&space;\sum_{n=0}^\infty&space;\frac{(-1)^n}{(2n&plus;1)!}x^{2n&plus;1}=&space;x&space;-&space;\frac{x^3}{3!}&space;&plus;&space;\frac{x^5}{5!}&space;-&space;\frac{x^7}{7!}&space;&plus;&space;\cdots" title="https://latex.codecogs.com/svg.image?\large \sin(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n+1)!}x^{2n+1}= x - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} + \cdots" />
+
+  <!--
+  \sin(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n+1)!}x^{2n+1}= x - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} + \cdots
+  -->
+
+  ```hoon
+
+  ```
+
+`++pow-n`
+
+
+- Implement `++cosine` and `++tangent`.
+
+  <img src="https://latex.codecogs.com/svg.image?\large&space;\cos(x)&space;=&space;\sum_{n=0}^\infty&space;\frac{(-1)^n}{(2n)!}x^{2n}&space;=&space;1&space;-&space;\frac{x^2}{2!}&space;&plus;&space;\frac{x^4}{4!}&space;-&space;\frac{x^6}{6!}&space;&plus;&space;\cdots&space;\\[8pt]&space;" title="https://latex.codecogs.com/svg.image?\large \cos(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n)!}x^{2n} = 1 - \frac{x^2}{2!} + \frac{x^4}{4!} - \frac{x^6}{6!} + \cdots \\[8pt] " />
+
+  <!--
+  \cos(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n)!}x^{2n} = 1 - \frac{x^2}{2!} + \frac{x^4}{4!} - \frac{x^6}{6!} + \cdots
+  -->
+
+  <img src="https://latex.codecogs.com/svg.image?\large&space;\tan(x)&space;=&space;\frac{\sin(x)}{\cos(x)}" title="https://latex.codecogs.com/svg.image?\large \tan(x) = \frac{\sin(x)}{\cos(x)}" />
+
+  <!--
+  \tan(x) = \frac{\sin(x)}{\cos(x)}
+  -->
+
+- As a stretch exercise, look up definitions for [exp (e^x)](https://en.wikipedia.org/wiki/Exponentiation#The_exponential_function) and [natural logarithm](https://en.wikipedia.org/wiki/Natural_logarithm), and implement these.  You can implement a general-purpose exponentiation function using the formula
+
+<img src="https://latex.codecogs.com/svg.image?\large&space;x^n&space;=&space;\exp(n&space;\,\text{ln}\,&space;x)" title="https://latex.codecogs.com/svg.image?\large x^n = \exp(n \,\text{ln}\, x)" />
+
+<!--
+x^n = \exp(n \,\text{ln}\, x)
+-->
+
+(We will use these in subsequent examples.)
 
 
 ##  Date & Time Mathematics
@@ -365,13 +454,8 @@ The base-64 representation uses the characters `0123456789abcdefghijklmnopqrstuv
 0wez.kFh00
 ```
 
-### Arbitrary Bases
 
-TODO
-[`++fo`](https://urbit.org/docs/hoon/reference/stdlib/3a#fo)
-
-
-##  Randomness & Entropy
+##  Randomness
 
 ### Entropy
 
@@ -383,11 +467,13 @@ For instance, consider the sequence _3 1 4 1 5 9 2 6 5 3 5 8 9 7 9 3_.  If you r
 
 Computers often mix both deterministic processes (called “pseudorandom number generators”) with random inputs, such as the current timestamp, to produce high-quality random numbers for use in games, modeling, cryptography, and so forth.  The Urbit entropy value `eny` is derived from the underlying host OS's `/dev/urandom` device, which uses sources like keystroke typing latency to produce random bits.
 
-### Randomness
+### Random Numbers
 
 Given a source of entropy to seed a random number generator, one can then use the [`++og`](https://urbit.org/docs/hoon/reference/stdlib/3d#og) door to produce various kinds of random numbers.  The basic operations of `++og` are described in [the lesson on subject-oriented programming](./N-subject.md).
 
 #### Exercise:  Implement a random-number generator from scratch
+
+- Produce a random stream of bits using the linear congruential random number generator.
 
 The linear congruential random number generator produces a stream of random bits with a repetition period of 2³¹.  Numericist John Cook [explains how LCGs work](https://www.johndcook.com/blog/2017/07/05/simple-random-number-generator/):
 
@@ -416,7 +502,7 @@ Can you verify that `1`s constitute about half of the values in this bit stream,
 
 #### Exercise:  Produce uniformly-distributed random numbers
 
-Using entropy as the source, [produce uniform random numbers](https://www.omscs-notes.com/simulation/generating-uniform-random-numbers/):  that is, numbers in the range [0, 1] with equal likelihood to machine precision.
+- Using entropy as the source, produce uniform random numbers:  that is, numbers in the range [0, 1] with equal likelihood to machine precision.
 
 We use the LCG defined above, then chop out 23-bit slices using [`++rip`](https://urbit.org/docs/hoon/reference/stdlib/2c#rip) to produce each number, manually compositing the result into a valid floating-point number in the range [0, 1].  (We avoid producing special sequences like [`NaN`](https://en.wikipedia.org/wiki/NaN).)
 
@@ -431,7 +517,7 @@ We use the LCG defined above, then chop out 23-bit slices using [`++rip`](https:
 =/  mask-clear           0b111.1111.1111.1111.1111.1111
 =/  mask-fill   0b11.1111.0000.0000.0000.0000.0000.0000
 =/  clears  (turn values |=(a=@rs (dis mask-clear a)))
-(turn clears |=(a=@ (con mask-fill a)))
+(turn clears |=(a=@ (sub:rs (mul:rs .2 (con mask-fill a)) .1.0)))
 |%
 ++  gen
   |_  [z=@ud]
@@ -453,15 +539,19 @@ We use the LCG defined above, then chop out 23-bit slices using [`++rip`](https:
 --
 ```
 
-Convert the above to a `%say` generator that can optionally accept a seed; if no seed is provided, use `eny`.
+- Convert the above to a `%say` generator that can optionally accept a seed; if no seed is provided, use `eny`.
+
+- Produce a higher-quality Mersenne Twister uniform RNG, such as [per this method](https://xilinx.github.io/Vitis_Libraries/quantitative_finance/2022.1/guide_L1/RNGs/RNG.html).
 
 #### Exercise:  Produce normally-distributed random numbers
+
+- Produce a normally-distributed random number generator using the uniform RNG described above.
 
 The normal distribution, or bell curve, describes the randomness of measurement.  The mean, or average value, is at zero, while points fall farther and farther away with increasingly less likelihood.
 
 ![A normal distribution curve with standard deviations marked](https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Standard_deviation_diagram.svg/640px-Standard_deviation_diagram.svg.png)
 
-One way to get from a uniform random number to a normal random number is [to use the uniform random number as the _cumulative distribution function_ (CDF)](https://xilinx.github.io/Vitis_Libraries/quantitative_finance/2022.1/guide_L1/RNGs/RNG.html), an index into “how far” the value is along the normal curve.
+One way to get from a uniform random number to a normal random number is [to use the uniform random number as the _cumulative distribution function_ (CDF)](https://www.omscs-notes.com/simulation/generating-uniform-random-numbers/), an index into “how far” the value is along the normal curve.
 
 ![A cumulative distribution function for three normal distributions](https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Normal_Distribution_CDF.svg/640px-Normal_Distribution_CDF.svg.png)
 
@@ -492,17 +582,9 @@ To calculate an arbitrary power of a floating-point number, we require a few tra
 =/  mask-clear           0b111.1111.1111.1111.1111.1111
 =/  mask-fill   0b11.1111.0000.0000.0000.0000.0000.0000
 =/  clears    (turn values |=(a=@rs (dis mask-clear a)))
-=/  uniforms  (turn clears |=(a=@ (con mask-fill a)))
+=/  uniforms  (turn clears |=(a=@ (sub:rs (mul:rs .2 (con mask-fill a)) .1.0)))
 (turn uniforms normal)
 |%
-++  sgn
-  |=  x=@rs
-  ^-  @rs
-  ?:  (lth:rs x .0)
-    .-1
-  ?:  (gth:rs x .0)
-    .1
-  .0
 ++  factorial
   :: integer factorial, not gamma function
   |=  x=@rs
@@ -579,6 +661,8 @@ To calculate an arbitrary power of a floating-point number, we require a few tra
 --
 ```
 
+#### Exercise:  Upgrade the normal RNG
+
 A more complicated formula uses several constants to improve the accuracy significantly:
 
 <img src="https://latex.codecogs.com/svg.image?\large&space;Z&space;=&space;\text{sgn}\left(U-\frac{1}{2}\right)&space;\left(&space;t&space;-&space;\frac{c_{0}&plus;c_{1}&space;t&plus;c_{2}&space;t^{2}}{1&plus;d_{1}&space;t&plus;d_{2}&space;t^{2}&space;&plus;&space;d_{3}&space;t^{3}}&space;\right)" title="https://latex.codecogs.com/svg.image?\large Z = \text{sgn}\left(U-\frac{1}{2}\right) \left( t - \frac{c_{0}+c_{1} t+c_{2} t^{2}}{1+d_{1} t+d_{2} t^{2} + d_{3} t^{3}} \right)" />
@@ -587,7 +671,13 @@ where
 
 - sgn is the signum or sign function;
 - _t_ is √-ln[min(_U_, 1-_U_)²]; and
-- constants are as below.
+- the constants are:
+  - _c₀_ = 2.515517
+  - _c₁_  .0.802853
+  - _c₂_  .0.010328
+  - _d₁_  .1.532788
+  - _d₂_  .0.189268
+  - _d₃_  .0.001308
 
 <!--
 $$
@@ -595,6 +685,10 @@ Z = \text{sgn}\left(U-\frac{1}{2}\right) \left( t - \frac{c_{0}+c_{1} t+c_{2} t^
 $$
 -->
 
+- Implement this formula in Hoon to produce normally-distributed random numbers.
+- How would you implement other random number generators?
+
+<!--
 **`/gen/normal2.hoon`**
 
 ```hoon
@@ -606,7 +700,7 @@ $$
 =/  mask-clear           0b111.1111.1111.1111.1111.1111
 =/  mask-fill   0b11.1111.0000.0000.0000.0000.0000.0000
 =/  clears    (turn values |=(a=@rs (dis mask-clear a)))
-=/  uniforms  (turn clears |=(a=@ (con mask-fill a)))
+=/  uniforms  (turn clears |=(a=@ (sub:rs (mul:rs .2 (con mask-fill a)) .1.0)))
 (turn uniforms normal)
 |%
 ++  sgn
@@ -704,10 +798,90 @@ $$
   --
 --
 ```
+-->
 
-How would you implement other random number generators?
+##  Hashing
 
-### Hashing
+A [hash function](https://en.wikipedia.org/wiki/Hash_function) is a tool which can take any input data and produce a fixed-length value that corresponds to it.  Hashes can be used for many purposes:
 
+1. **Encryption**.  A [cryptographic hash function](https://en.wikipedia.org/wiki/Cryptographic_hash_function) leans into the one-way nature of a hash calculation to produce a fast, practically-irreversible hash of a message.  They are foundational to modern cryptography.
+2. **Attestation or preregistration**.  If you wish to demonstrate that you produced a particular message at a later time (including a hypothesis or prediction), or that you solved a particular problem, hashing the text of the solution and posting the hash publicly allows you to verifiably timestamp your work.
+3. **Integrity verification**.  By comparing the hash of data to its expected hash, you can verify that two copies of data are equivalent (such as a downloaded executable file).  The [MD5](https://en.wikipedia.org/wiki/MD5) hash algorithm is frequently used for this purpose as [`md5sum`](https://en.wikipedia.org/wiki/Md5sum).
+4. **Data lookup**.  [Hash tables](https://en.wikipedia.org/wiki/Hash_table) are one way to implement a key→value mapping, such as the functionality offered by Hoon's `++map`.
+
+Theoretically, since the number of fixed-length hashes are finite, an infinite number of possible programs can yield any given hash.  This is called a [_hash collision_](https://en.wikipedia.org/wiki/Hash_collision), but for many practical purposes such a collision is extremely unlikely.
 
 ### Hoon Operations
+
+The Hoon standard library supports fast insecure hashing with [`++mug`](https://urbit.org/docs/hoon/reference/stdlib/2e#mug), which accepts any noun and produces an atom of the hash.
+
+```hoon
+> `@ux`(mug 1)
+0x715c.2a60
+
+> `@ux`(mug 2)
+0x718b.9468
+
+> `@ux`(mug 3)
+0x72a8.ef1a
+
+> `@ux`(mug 1.000.000)
+0x5145.9d7d
+
+> `@ux`(mug .)
+0x6c91.8422
+```
+
+`++mug` operates on the raw form of the noun however, without Hoon-specific metadata like aura:
+
+```hoon
+> (mug 0x5)
+721.923.263
+
+> (mug 5)
+721.923.263
+```
+
+Hoon also includes [SHA-256 and SHA-512](https://en.wikipedia.org/wiki/SHA-2) [tooling](https://urbit.org/docs/hoon/reference/stdlib/3d).  ([`++og`](https://urbit.org/docs/hoon/reference/stdlib/3d#og), the random number generator, is based on SHA-256 hashing.)
+
+- [`++shax`](https://urbit.org/docs/hoon/reference/stdlib/3d#shax) produces a hashed atom of 256 bits from any atom.
+
+    ```hoon
+    > (shax 1)
+    69.779.012.276.202.546.540.741.613.998.220.636.891.790.827.476.075.440.677.599.814.057.037.833.368.907
+    
+    > `@ux`(shax 1)
+    0x9a45.8577.3ce2.ccd7.a585.c331.d60a.60d1.e3b7.d28c.bb2e.de3b.c554.4534.2f12.f54b
+
+    > `@ux`(shax 2)
+    0x86d9.5764.98ea.764b.4924.3efe.b05d.f625.0104.38c6.a55d.5b57.8de4.ff00.c9b4.c1db
+
+    > `@ux`(shax 3)
+    0xc529.ffad.9a5a.b611.62b1.1d61.6b63.9e00.586b.a846.746a.197d.4daf.78b9.08ed.4f08
+
+    > `@ux`(shax 1.000.000)
+    0x84a4.929b.1d69.708e.d4b7.0fb8.ca97.cc85.c4a6.1aae.4596.f753.d0d2.6357.e7b9.eb0f
+    ```
+
+- [`++shaz`](https://urbit.org/docs/hoon/reference/stdlib/3d#shaz) produces a hashed atom of 512 bits from any atom.
+
+    ```hoon
+    > (shaz 1)
+    3.031.947.054.025.992.811.210.838.487.475.158.569.967.793.095.050.169.760.709.406.427.393.828.309.497.273.121.275.530.382.185.415.047.474.588.395.933.812.689.047.905.034.106.140.802.678.745.778.695.328.891
+
+    > `@ux`(shaz 1)
+    0x39e3.d936.c6e3.1eaa.c08f.cfcf.e7bb.4434.60c6.1c0b.d5b7.4408.c8bc.c35a.6b8d.6f57.00bd.cdde.aa4b.466a.e65f.8fb6.7f67.ca62.dc34.149e.1d44.d213.ddfb.c136.68b6.547b
+
+    > `@ux`(shaz 2)
+    0xcadc.698f.ca01.cf29.35f7.6027.8554.b4e6.1f35.4539.75a5.bb45.3890.0315.9bc8.485b.7018.dd81.52d9.cc23.b6e9.dd91.b107.380b.9d14.ddbf.9cc0.37ee.53a8.57b6.c948.b8fa
+
+    > `@ux`(shaz 3)
+    0x4ba.a6ba.4a01.12e6.248b.5e89.9389.4786.aced.1a59.136b.78c6.7076.eb90.2221.d7a5.453a.56d1.446d.17d1.33cd.b468.f798.eb6b.dcee.f071.7040.7a2f.aa94.df7d.81f5.5be4
+
+    > `@ux`(shaz 1.000.000)
+    0x4c13.ef8b.09cf.6e59.05c4.f203.71a4.9cec.3432.ba26.0174.f964.48f1.5475.b2dd.2c59.98c2.017c.9c03.cbea.9d5f.591b.ff23.bbff.b0ae.9c67.a4a9.dd8d.748a.8e14.c006.cbcc
+    ```
+
+#### Exercise:  Produce a secure password tool
+
+- Produce a basic secure password tool.  It should accept a password, salt it (add a predetermined value to the password), and hash it.  _That_ hash is then compared to a reference hash to determine whether or not the password is correct.
