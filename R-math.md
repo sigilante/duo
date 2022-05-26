@@ -281,19 +281,21 @@ The Hoon standard library at the current time omits many [transcendental functio
       $(i (add:rs i .1), p (add:rs p term), po p)
     ```
 
-- Implement `++cosine` and `++tangent`.
+- Implement `++cosine`.
 
-  <img src="https://latex.codecogs.com/svg.image?\large&space;\cos(x)&space;=&space;\sum_{n=0}^\infty&space;\frac{(-1)^n}{(2n)!}x^{2n}&space;=&space;1&space;-&space;\frac{x^2}{2!}&space;&plus;&space;\frac{x^4}{4!}&space;-&space;\frac{x^6}{6!}&space;&plus;&space;\cdots&space;\\[8pt]&space;" title="https://latex.codecogs.com/svg.image?\large \cos(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n)!}x^{2n} = 1 - \frac{x^2}{2!} + \frac{x^4}{4!} - \frac{x^6}{6!} + \cdots \\[8pt] " />
+    <img src="https://latex.codecogs.com/svg.image?\large&space;\cos(x)&space;=&space;\sum_{n=0}^\infty&space;\frac{(-1)^n}{(2n)!}x^{2n}&space;=&space;1&space;-&space;\frac{x^2}{2!}&space;&plus;&space;\frac{x^4}{4!}&space;-&space;\frac{x^6}{6!}&space;&plus;&space;\cdots&space;\\[8pt]&space;" title="https://latex.codecogs.com/svg.image?\large \cos(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n)!}x^{2n} = 1 - \frac{x^2}{2!} + \frac{x^4}{4!} - \frac{x^6}{6!} + \cdots \\[8pt] " />
 
-  <!--
-  \cos(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n)!}x^{2n} = 1 - \frac{x^2}{2!} + \frac{x^4}{4!} - \frac{x^6}{6!} + \cdots
-  -->
+    <!--
+    \cos(x) = \sum_{n=0}^\infty \frac{(-1)^n}{(2n)!}x^{2n} = 1 - \frac{x^2}{2!} + \frac{x^4}{4!} - \frac{x^6}{6!} + \cdots
+    -->
 
-  <img src="https://latex.codecogs.com/svg.image?\large&space;\tan(x)&space;=&space;\frac{\sin(x)}{\cos(x)}" title="https://latex.codecogs.com/svg.image?\large \tan(x) = \frac{\sin(x)}{\cos(x)}" />
+- Implement `++tangent`.
 
-  <!--
-  \tan(x) = \frac{\sin(x)}{\cos(x)}
-  -->
+    <img src="https://latex.codecogs.com/svg.image?\large&space;\tan(x)&space;=&space;\frac{\sin(x)}{\cos(x)}" title="https://latex.codecogs.com/svg.image?\large \tan(x) = \frac{\sin(x)}{\cos(x)}" />
+
+    <!--
+    \tan(x) = \frac{\sin(x)}{\cos(x)}
+    -->
 
 - As a stretch exercise, look up definitions for [exp (e^x)](https://en.wikipedia.org/wiki/Exponentiation#The_exponential_function) and [natural logarithm](https://en.wikipedia.org/wiki/Natural_logarithm), and implement these.  You can implement a general-purpose exponentiation function using the formula
 
