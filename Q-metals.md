@@ -13,6 +13,8 @@ objectives:
 
 #   Adaptive Cores
 
+_This lesson introduces how cores can be extended for different behavioral patterns.  It may be considered optional and skipped if you are speedrunning Hoon School._
+
 Cores can expose and operate with many different assumptions about their inputs and structure.  `[battery payload]` describes the top-level structure of a core, but within that we already know other requirements can be enforced, like `[battery [sample context]]` for a gate, or no `sample` for a trap.  Cores can also expose and operate on their input values with different relationships.  This lesson is concerned with examining _polymorphism_, which allows flexibility in type, and _variance_, which allows cores to use different sets of rules as they evaluate.
 
 If cores never changed, we wouldn't need polymorphism.  Of course, nouns are immutable and never change, but we use them as templates to construct new nouns around.
@@ -119,27 +121,36 @@ For core `b` to nest within core `a`, the batteries of `a` and `b` must have the
 
 There are four kinds of cores: `%gold`, `%iron`, `%zinc`, and `%lead`. You are able to use core-variance rules to create programs which take other programs as arguments. Which particular rules depends on which kind of core your program needs to complete.
 
-Before we embark on the following discussion, we want you to know that [variance](https://en.wikipedia.org/wiki/Covariance_and_contravariance_%28computer_science%29) is a bright-line idea, much like cores themselves, which once you “get” illuminates you further about Hoon-nature.  For the most part, though, you don't need to worry about core variance much unless you are writing kernel code, since it impinges on how cores evaluate with other cores as inputs.  Don't sweat it if it takes a while for core variance to click for you.  (If you want to dig into resources, check out Meyer type theory.  The rules should make sense if you think about them intuitively and don't get hung up on terminology.)  [Vadzim Vysotski](https://vadzimv.dev/2019/10/01/generic-programming-part-1-introduction.html) and [Jamie Kyle](https://medium.com/@thejameskyle/type-systems-covariance-contravariance-bivariance-and-invariance-explained-35f43d1110f8) explain the theory of type system variance accessibly, while [Eric Lippert](https://archive.ph/QmiqB) provides a more technical description.  There are many wrinkles that particular languages, such as object-oriented programming languages, introduce which we can elide here.
+Before we embark on the following discussion, we want you to know that [variance](https://en.wikipedia.org/wiki/Covariance_and_contravariance_%28computer_science%29) is a bright-line idea, much like cores themselves, which once you “get” illuminates you further about Hoon-nature.  For the most part, though, you don't need to worry about core variance much unless you are writing kernel code, since it impinges on how cores evaluate with other cores as inputs.  Don't sweat it if it takes a while for core variance to click for you.  (If you want to dig into resources, check out Meyer type theory.  The rules should make sense if you think about them intuitively and don't get hung up on terminology.)  You should read up on the [Liskov substitution principle](https://en.wikipedia.org/wiki/Liskov_substitution_principle) if you want to dive deeper.  [Vadzim Vysotski](https://vadzimv.dev/2019/10/01/generic-programming-part-1-introduction.html) and [Jamie Kyle](https://medium.com/@thejameskyle/type-systems-covariance-contravariance-bivariance-and-invariance-explained-35f43d1110f8) explain the theory of type system variance accessibly, while [Eric Lippert](https://archive.ph/QmiqB) provides a more technical description.  There are many wrinkles that particular languages, such as object-oriented programming languages, introduce which we can elide here.
 
-What trips learners up about variance is that **variance rules apply to the input and output types of a core, not directly to the core itself**.  A core has a variance property, but that property doesn't manifest until cores are used together with each other.
+<!--
+https://stackoverflow.com/questions/37467882/why-does-c-sharp-use-contravariance-not-covariance-in-input-parameters-with-de
+https://docs.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance
+--->
+
+Briefly, computer scientist Eric Lippert [clarifies](https://stackoverflow.com/questions/37467882/why-does-c-sharp-use-contravariance-not-covariance-in-input-parameters-with-de) that “variance is a fact about the preservation of an assignment compatibility relationship across a transformation of types.”  What trips learners up about variance is that **variance rules apply to the input and output of a core, not directly to the core itself**.  A core has a _variance property_, but that property doesn't manifest until cores are used together with each other.
 
 Variance describes the four possible relationships that type rules are able to have to each other.  Hoon imaginatively designates these by metals.  Briefly:
 
-1. **Covariance (`%zinc`)** means that more specific types nest inside of more generic types:  it's like claiming that a tree is a plant.
+1. **Covariance (`%zinc`)** means that specific types nest inside of generic types:  it's like claiming that a core that produces a `%plant` can produce a `%tree`, a subcategory of `%plant`.  Covariance is useful for flexibility in return values.
 
-2. **Contravariance (`%iron`)** means that more generic types are expected to nest inside of less specific types:  this is like claiming that a plant is a tree.  It may be true, but it may break things.
+2. **Contravariance (`%iron`)** means that generic types are expected to nest inside of specific types:  it's like claiming that a core that can accept a `%tree` can accept a `%plant`, the supercategory of `%tree`.  (Contravariance seems counterintuitive for many developers when they encounter it for the first time.)  Contravariance is useful for flexibility in input values (`sample`s).
 
-3. **Bivariance (`%lead`)** means that we can allow both covariant and contravariant instances:  use a tree, use a plant, use a vine.  If it works, it works.
+3. **Bivariance (`%lead`)** means that we can allow both covariant and contravariant behavior.  While bivariance is included for completeness (including a worked example below), it is not commonly used and only a few examples exist in the standard library for building shared data structure cores.
 
-4. **Invariance (`%gold`)** means that types must mutually nest compatibly:  a tree is a tree is a tree.
+4. **Invariance (`%gold`)** means that types must mutually nest compatibly:  a core that accepts or produces a `%tree` can only accept or produce a `%tree`.  This is the default behavior of cores, so it's the strongest model you have imprinted on.  Cores which allow variance are changing that behavior.
 
-The default is `%gold`; a `%gold` core can be cast or converted to any metal, and any metal can be cast or converted to `%lead`.
+A `%gold` core can be cast or converted to any metal, and any metal can be cast or converted to `%lead`.
 
-<!-- TODO would be nice to explain similar to aura nesting rules, but at the core level -->
+<!--
+TODO
+would be nice to explain similar to aura nesting rules, but at the core level
+https://medium.com/@thejameskyle/type-systems-covariance-contravariance-bivariance-and-invariance-explained-35f43d1110f8
+-->
 
 ### `%zinc` Covariance
 
-Covariance means that specific types nest inside of generic types:  `tree` nests inside of `plant`.  Covariant data types are sources, or read-only values.
+Covariance means that specific types nest inside of generic types:  `%tree` nests inside of `%plant`.  Covariant data types are sources, or read-only values.
 
 A zinc core `z` has a read-only sample (payload head, `+6.z`) and an opaque context (payload tail, `+7.z`).  (_Opaque_ here means that the faces and arms are not exported into the namespace, and that the values of faces and arms can't be written to.  The object in question can be replaced by something else without breaking type safety.)  A core `y` which nests within it must be a gold or zinc core, such that `+6.y` nests within `+6.z`.  Hence, **covariant**.
 
@@ -174,6 +185,8 @@ If type `x` nests within type `xx`, and type `y` nests within type `yy`, then a 
 
 Informally, a function fits an interface if the function has a more specific result and/or a less specific argument than the interface.
 
+For instance, the archetypal Gall agents in `/sys/lull.hoon` are composed using iron gates since they will be used as examples for building actual agent cores.  The `++rs` and sister gates in `/sys/hoon.hoon` are built using iron doors with specified rounding behavior so when you actually use the core (like `++add:rs`) the core you are using has been built as an example.
+
 The [`|~` barsig](https://urbit.org/docs/hoon/reference/rune/bar#-barsig) rune produces an iron gate.  The [`^|` ketbar](https://urbit.org/docs/hoon/reference/rune/ket#-ketbar) rune converts a `%gold` invariant core to an iron core.
 
 ### `%lead` Bivariance
@@ -188,6 +201,8 @@ Bivariant data types are neither readable nor writeable, but have no constraints
 
 Informally, a more specific generator can be used as a less specific generator.
 
+For instance, several archetypal cores in `/sys/lull.hoon` which define operational data structures for Arvo are composed using lead gates.
+
 The [`|?` barwut](https://urbit.org/docs/hoon/reference/rune/bar#-barwut) rune produces a lead trap.  The [`^?` ketwut](https://urbit.org/docs/hoon/reference/rune/ket#-ketwut) rune converts any core to a `%lead` bivariant core.
 
 ### `%gold` Invariance
@@ -200,7 +215,9 @@ By default, cores are `%gold` invariant cores.
 
 ### Examples
 
-#### `%iron` Contravariant Polymorphism
+#### Example:  `%iron` Contravariant Polymorphism
+
+TODO this whole example may need to be chucked or reworked, it's substantially confusing
 
 Let's take a look at a [gate](https://urbit.org/docs/glossary/gate/) from the Hoon standard library as an example; we'll be passing a few different types in. The code below is an excerpt from `hoon.hoon` and, as such, will not run as-is by itself.  TODO
 
@@ -279,7 +296,7 @@ Here `fold` will produce a gate that takes an `atom` and applies a gate to a `li
 
 The key takeaway from both of these examples is that the gates provided are _`%iron`-polymorphic_ with respect to the definition of the type in `fold`.  They are iron polymorphic because samples `s` and `e` nest under the types `state` and `elem`.  In the second case, that's because when we provided those to `++fold`, it was was stated they were `@` and `@`.  In the first case, we stated that `state` was `(list @)` and `elem` was `@`. In both cases, the sample of each gate nest inside the types defined when we called the wet gate `fold`.
 
-#### `%lead` Bivariant Polymorphism
+#### Example:  `%lead` Bivariant Polymorphism
 
 - Calculate the Fibonacci series using `%lead` and `%iron` cores.
 
@@ -353,7 +370,7 @@ Let's examine each arm in detail.
   ~
 ```
 
-`++stream` is a mold-builder. It's a wet gate that takes one argument, `of`, which is a `mold`, and produces a lead trap—a function with no `sample` and an arm `$` buc, with opaque `payload`.
+`++stream` is a mold-builder. It's a wet gate that takes one argument, `of`, which is a `mold`, and produces a `%lead` trap—a function with no `sample` and an arm `$` buc, with opaque `payload`.
 
 `$_` buccab is a rune that produces a type from an example; `^?` ketwut converts (casts) a core to lead; `|.` bardot forms the trap.  So to follow this sequence we read it backwards:  we create a trap, convert it to a lead trap (making its payload inaccessible), and then use that lead trap as an example from which to produce a type.
 
@@ -432,7 +449,7 @@ If `i` and `n` are equal, the trap will produce `~`.  If not, `s` is called and 
   ==
 ```
 
-The final arm in our core is `++fib`, which is a `++stream` of `@ud` and therefore is a lead core.  Its subject contains `p` and `q`, which will not be accessible outside of this trap, but because of the `%=` cenhep will be retained in their modified form in the product trap.  The product of the trap is a pair (`:-` colhep) of an `@ud` and the trap that will produce the next `@ud` in the Fibonacci series.
+The final arm in our core is `++fib`, which is a `++stream` of `@ud` and therefore is a `%lead` core.  Its subject contains `p` and `q`, which will not be accessible outside of this trap, but because of the `%=` cenhep will be retained in their modified form in the product trap.  The product of the trap is a pair (`:-` colhep) of an `@ud` and the trap that will produce the next `@ud` in the Fibonacci series.
 
 ```hoon
 =<  (to-list (take fib 10))
@@ -444,4 +461,6 @@ Finally, the first line of our program will take the first 10 elements of `fib` 
 ~[1 1 2 3 5 8 13 21 34 55]
 ```
 
-This example is a bit overkill for simply calculating the Fibonacci series, but it nicely illustrates how you might use iron cores. Instead of `++fib`, you could supply any infinite sequence and `++stream` would correctly handle it.
+This example is a bit overkill for simply calculating the Fibonacci series, but it illustrates how you could use `%lead` cores.  Instead of `++fib`, you can supply any infinite sequence and `++stream` will correctly handle it.
+
+- Produce a `%say` generator that yields another self-referential sequence, like the [Lucas numbers](https://en.wikipedia.org/wiki/Lucas_number) or the [Thue–Morse sequence](https://en.wikipedia.org/wiki/Thue%E2%80%93Morse_sequence).

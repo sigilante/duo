@@ -199,7 +199,7 @@ The previous neighbor of ~sampel-palnet is thus:
 ~datwyn-lavrud
 ```
 
-Find the next neighbor of ~sampel-palnet.
+- Find the next neighbor of ~sampel-palnet.
 
 #### Exercise:  Finding the sponsor of a neighbor
 
@@ -223,7 +223,7 @@ The sponsor of the previous neighbor of ~sampel-palnet is thus:
 ~talnep
 ```
 
-Find the sponsor of the next neighbor of ~sampel-palnet.
+- Find the sponsor of the next neighbor of ~sampel-palnet.
 
 #### Exercise:  Finding the child of a point
 
@@ -236,6 +236,6 @@ The first moon of ~sampel-palnet is:
 ~doznec-sampel-palnet
 ```
 
-What are the first moon children of ~sampel-palnet's neighbors?
+- What are the first moon children of ~sampel-palnet's neighbors?
 
-What is the first planet of the star ~sampel?  (Check the above text to determine the offset.)
+- What is the first planet of the star ~sampel?  (Check the above text to determine the offset.)

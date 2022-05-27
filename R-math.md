@@ -14,6 +14,8 @@ objectives:
 
 #   Mathematics
 
+_This lesson introduces how non-`@ud` mathematics are instrumented in Hoon.  It may be considered optional and skipped if you are speedrunning Hoon School._
+
 All of the math we've done until this point relied on unsigned integers:  there was no negative value possible, and there were no numbers with a fractional part.  How can we work with mathematics that require more than just bare unsigned integers?
 
 `@u` unsigned integers (whether `@ud` decimal, `@ux` hexadecimal, etc.) simply count upwards by binary place value from zero.  However, if we apply a different interpretive rule to the resulting value, we can treat the integer (in memory) _as if_ it corresponded to a different real value, such as a [negative number](https://en.wikipedia.org/wiki/Integer) or a [number with a fractional part](https://en.wikipedia.org/wiki/Rational_number).  Auras make this straightforward to explore:
