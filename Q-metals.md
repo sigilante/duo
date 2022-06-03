@@ -25,7 +25,7 @@ Is this legal?  Does it make sense?  Every function call in Hoon does this, so w
 
 The full core stores _both_ payload types:  the type that describes the `payload` currently in the core, and the type that the core was compiled with.
 
-In the Bertrand Meyer tradition of type theory, there are two forms of polymorphism:  _variance_ and _genericity_.  In Hoon this choice is per core:  a core can be either `%wet` or `%dry`.  Dry polymorphism relies on variance; wet polymorphism relies on genericity.
+In the [Bertrand Meyer tradition of type theory](https://en.wikipedia.org/wiki/Object-Oriented_Software_Construction), there are two forms of polymorphism:  _variance_ and _genericity_.  In Hoon this choice is per core:  a core can be either `%wet` or `%dry`.  Dry polymorphism relies on variance; wet polymorphism relies on genericity.
 
 This lesson discusses both genericity and variance for core management.  These two sections may be read separately or in either order, and all of this content is not a requirement for working extensively with Gall agents.  If you're just starting off, wet gates (genericity) make the most sense to have in your toolkit now.
 

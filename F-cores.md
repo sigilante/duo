@@ -2,13 +2,330 @@
 title: Cores
 nodes: 130, 133
 objectives:
-  - "Explain what an Urbit ship is."
-  - "Distinguish a fakeship from a liveship."
-  - "Pronounce ASCII characters per standard Hoon developer practice."
+  - "Employ a trap to produce a reentrant block of code."
+  - "Produce a recursive gate."
+  - "Distinguish head and tail recursion."
+  - "Consider Hoon structures as cores."
+  - "Identify the special role of the `$` buc arm in many cores."
+  - "Order neighboring cores within the subject for addressibility."
 ---
 
+#   Cores
+
+The Hoon subject is a noun.  One way to look at this noun is to denote each fragment of is as either a computation or data.  By strictly separating these two kinds of things, we derive the data structure known within Hoon as a _core_.
+
+Cores are the most important data structure in Hoon.  They allow you to solve many coding problems by identifying a pattern and supplying a proper data structure apt to the challenge.  You have already started using cores with `|=` bartis gate construction and use.
+
+This lesson will introduce another core to solve a specific use case, then continue with a general discussion of cores.  Getting cores straight will be key to understanding why Hoon has the structure and internal logic it does.
 
 
+##  Repeating Yourself Using a Trap
+
+Computers were built and designed to carry out tasks which were too dainty and temperamental for humans to repeat consistently, or too prodigiously numerous for humans to ever complete.  At this point, you know how to build code that can make a decision between two branches, two different Hoon expressions.  Computers can decide between alternatives, but they also need to carry out a task until some condition is met.  (We can think of it as a recipe step, like “crack five eggs into a bowl”.  Until that process is complete, we as humans continue to carry out the equivalent action again and again until the process has been completed.)
+
+In programming, we call this behavior a “loop”.  A loop describes the situation in which we set up some condition, and repeat a process over and over until something we do meets that condition.  _Most_ of the time, this means counting once for each item in a collection, like a list.
+
+Hoon effects the concept of a loop using recursion, return to a particular point in an expression (presumably with some different values).  One way to do this is using the [`|-` barhep](https://urbit.org/docs/hoon/reference/rune/bar#-barhep) rune, which creates a structure called a _trap_.  (Think of the “trap” in the bottom of your sink.)  It means a point to which you can return again, perhaps with some key values (like a counter) changed.  Then you can repeat the calculation inside the trap again.  This continues until some single value, some noun, results, thereby handing a value back out of the expression.  (Remember that every Hoon expression results in a value.)
+
+This program adds 1+2+3+4+5 and returns the sum:
+
+```hoon
+=/  counter  1
+=/  sum  0
+|-
+?:  (gth counter 5)
+  sum
+%=  $
+  counter  (add counter 1)
+  sum      (add sum counter)
+==
+```
+
+(The last two lines happen “simultaneously”.)
+
+Let's unroll it:
+
+0.  `counter = 1`
+    `sum = 0`
+1.  `(gth counter 5) = %.n`
+    `counter ← (add counter 1) = 2`
+    `sum ← (add sum counter) = 0 + 1 = 1`
+2.  `(gth counter 5) = %.n`
+    `counter ← (add counter 1) = 3`
+    `sum ← (add sum counter) = 1 + 2 = 3`
+3.  `(gth counter 5) = %.n`
+    `counter ← (add counter 1) = 4`
+    `sum ← (add sum counter) = 3 + 3 = 6`
+4.  `(gth counter 5) = %.n`
+    `counter ← (add counter 1) = 5`
+    `sum ← (add sum counter) = 6 + 4 = 10`
+5.  `(gth counter 5) = %.n`
+    `counter ← (add counter 1) = 6`
+    `sum ← (add sum counter) = 10 + 5 = 15`
+6.  `(gth counter 5) = %.y`
+
+(And thus `sum` has the final value of `15`.)
+
+It is frequently helpful, when constructing these, to be able to output the values at each step of the process.  Use the [`~&` sigpam](https://urbit.org/docs/hoon/reference/rune/sig#-sigpam) rune to create output without changing any values:
+
+```hoon
+=/  counter  1
+=/  sum  0
+|-
+~&  "counter:"
+~&  counter
+~&  "sum:"
+~&  sum
+?:  (gth counter 5)
+  sum
+%=  $
+  counter  (add counter 1),
+  sum      (add sum counter))
+==
+```
+
+You can do even better using _interpolation_:
+
+```hoon
+=/  counter  1
+=/  sum  0
+|-
+~&  "counter: {<counter>}"
+~&  "sum: {<sum>}"
+?:  (gth counter 5)
+  sum
+%=  $
+  counter  (add counter 1),
+  sum      (add sum counter))
+==
+```
+
+Another example:  let's calculate a factorial.  (This is not the most efficient way to do this!)  We will introduce a couple of new bits of syntax and a new gate (`++dec`).  Make this into a generator `fact.hoon`:
+
+```hoon
+|=  n=@ud
+|-
+~&  n
+?:  =(n 1)
+  n
+%+  mul
+n
+%=  $
+  n  (dec n)
+==
+```
+
+- We are using the `=` irregular syntax for `.=` dottis, test for equality of two values.
+- We are using the `+` irregular syntax for `.+` dotlus, increment a value (add one to a value).
+- Why do we return the result (`product` in Hoon parlance) at 1 instead of 0?
+
+One more thing:  as we write more complicated programs, it is helpful to learn to read the runes:
+
+```
+=/
+  n
+  15
+  |-
+    ~&
+      n
+      ?:
+        =(n 1)      :: .=  n  1
+        n
+      %+
+        mul
+        n
+        %=
+          $
+          n
+          (dec n)   :: %-  dec  n
+        ==
+```
+
+As we move on from this lesson, we are going to revert to the irregular form.  If you would like to see exactly how one is structured, you can use the [`!,` zapcom](https://urbit.org/docs/hoon/reference/rune/zap#-zapcom) rune.  `!,` zapcom produces an annotated _abstract syntax tree_ (AST) which labels every value and expands any irregular syntax into the regular runic form.
+
+```hoon
+> !,  *hoon  (add 5 6)
+[%cncl p=[%wing p=~[%add]] q=~[[%sand p=%ud q=5] [%sand p=%ud q=6]]]
+```
+
+```hoon
+> !,  *hoon  |=  n=@ud  
+ |-  
+ ~&  n  
+ ?:  =(n 1)  
+   n  
+ %+  mul  
+ n  
+ %=  $  
+   n  (dec n)  
+ ==  
+[ %brts  
+ p=[%bcts p=term=%n q=[%base p=[%atom p=~.ud]]]  
+   q  
+ [ %brhp  
+     p  
+   [ %sgpm  
+     p=0  
+     q=[%wing p=~[%n]]  
+       r  
+     [ %wtcl  
+       p=[%dtts p=[%wing p=~[%n]] q=[%sand p=%ud q=1]]  
+       q=[%wing p=~[%n]]  
+         r  
+       [ %cnls  
+         p=[%wing p=~[%mul]]  
+         q=[%wing p=~[%n]]  
+         r=[%cnts p=~[%$] q=~[[p=~[%n] q=[%cncl p=[%wing p=~[%dec]] q=~[[%wing p=~[%n]]]]]]]  
+       ]  
+     ]  
+   ]  
+ ]  
+]
+```
+
+(_There's a lot going on in there._  Focus on the four-letter runic identifiers:  `%sgpm` for `~&` sigpam, for instance.)
+
+> ##  Calculate a sequence of numbers
+>
+> Produce a gate (generator) which accepts a `@ud` value and
+> calculates the series where each term is described by
+> 
+> $$
+> n_{i} = i^{2}
+> \textrm{,}
+> $$
+>
+> that is, the first numbers are 0, 1, 4, 9, 16, 25, etc.
+>
+> You do not need to store these values in a list; simply output
+> them at each step using `~&` sigpam and return the final value.
+{: .challenge}
+
+> ##  Output each letter in a `tape`
+>
+> Produce a gate (generator) which accepts a `tape` value and
+> prints out each letter in order on a separate line.
+>
+> For example, given the `tape` `"hello"`, the generator should 
+> print out
+> 
+> 'h'
+> 'e'
+> 'l'
+> 'l'
+> 'o'
+>
+> You do not need to store these values in a list; simply output
+> them at each step using `~&` sigpam and return the final value.
+> 
+> You can retrieve the _n_-th element in a `tape` using the 
+> `++snag` gate:
+> 
+> ```
+> > =/  n  0  (snag n "hello")
+> 'h'
+> ```
+> 
+> (Note that `++snag` counts starting at zero, not one.)
+{: .challenge}
+
+
+##  Cores
+
+So far we have introduced and worked with a few key structures:
+
+1. Nouns
+2. Molds (types)
+3. Gates
+4. Traps
+
+Some of them are _data_, like raw values:  `0x1234.5678.abcd` and `[5 6 7]`.  Others are _code_, programs that do something.  What unifies all of these under the hood?
+
+A core is a cell pairing operations to data.  (Think back to Lesson -1:  we have state, data, and operations.  Cores represent two of these.)  Formally, we'll say a core is a cell `[battery payload]`, where `battery` describes the things that can be done (the operations) and `payload` describes the data on which those operations rely.
+
+(I feel like “battery” evokes the voltaic pile more than a bank of guns, but the latter actually does something directly.  Actually, come to think of it this is entirely an artillery metaphor.)
+
+**Cores are the most important structural concept for you to grasp in Hoon.**  Everything nontrivial is a core.  Some of the runes you have used already produce cores, like the gate.  That is, a gate marries a `battery` (the operating code) to the `payload` (the input values AND the “subject” or operating context).
+
+Urbit adopts an innovative programming paradigm called “subject-oriented programming.”  By and large, Hoon (and Nock) is a functional programming language in that running a piece of code twice will always yield the same result.
+
+However, Hoon also very carefully bounds the known context of any part of the program as the _subject_.  Basically, the subject is the noun against which any arbitrary Hoon code is evaluated.
+
+For instance, when we first composed generators, we made what are called “naked generators”:  that is, they do not have access to any information outside of the base subject (Arvo, Hoon, and `%zuse`) and their sample (arguments).  Other generators (such as `%say` generators, described below) can have more contextual information, including random number generators and optional arguments, passed to them to form part of their subject.
+
+Cores have two kinds of values attached:  arms and legs, both called limbs.  Arms describe known labeled addresses (with `++` luslus or `+$` lusbuc) which carry out computations.  Legs are limbs which store data.
+
+![](https://davis68.github.io/martian-computing/img/08-nubret.png)
+
+### Arms
+
+An [_arm_](https://urbit.org/docs/glossary/arm) is a Hoon expression to be evaluated against the core subject (i.e. its parent core is its subject).
+
+Within a core, we label arms as Hoon expressions (frequently `|=` bartis gates) using the [`++` luslus](https://urbit.org/docs/hoon/reference/rune/lus#-luslus) digraph.  (`++` isn't formally a rune because it doesn't actually change the structure of a Hoon expression.)
+
+```hoon
+|%
+++  add-one
+  |=  a=@ud
+  ^-  @ud
+  (add a 1)
+++  sub-one
+  |=  a=@ud
+  ^-  @ud
+  (sub a 1)
+--
+```
+
+(The `--` hephep limiter is used because `|%` barcen can have any number of arms attached.)
+
+We can also define custom types using [`+$` lusbuc](https://urbit.org/docs/hoon/reference/rune/lus#-lusbuc) digraphs.  We won't do much with these yet but they will come in handy for custom types later on.
+
+This core defines a set of types intended to work with playing cards:
+
+```hoon
+|%
++$  suit  ?(%hearts %spades %clubs %diamonds)
++$  rank  ?(1 2 3 4 5 6 7 8 9 10 11 12 13)
++$  card  [sut=suit val=rank]
++$  deck  (list card)
+---
+```
+
+When we write generators, we can include helpful tools as arms either before the main code (with `=>` tisgar) or after the main code (with `=<` tisgal):
+
+```hoon
+|=  n=@ud
+=<
+(add-one n)
+|%
+++  add-one
+  |=  a=@ud
+  ^-  @ud
+  (add a 1)
+--
+```
+
+A library (a file in `/lib`) is typically structured as a `|%` barcen core.
+
+### Legs
+
+A [_leg_](https://urbit.org/docs/hoon/hoon-school/the-subject-and-its-legs) is a data value.  They tend to be rather trivial but useful ways to pin constants.  `=/` tisfas values are legs.
+
+TODO
+
+https://urbit.org/docs/hoon/hoon-school/gates#what-is-a-gate
+https://urbit.org/docs/hoon/hoon-school/gates#anatomy-of-a-gate
+
+#### Exercise:  Three Ways to Calculate a Factorial
+
+trap, then gate, then tail-call gate
+
+```hoon
+|=  n=@ud
+?:  =(n 1)
+  1
+(mul n $(n (dec n)))
+```
 
 ##  Tutorial:  List of Numbers
 

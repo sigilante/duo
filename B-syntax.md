@@ -417,7 +417,7 @@ A running cell which terminates in a `~` sig (null) atom is a list.
 
   `~` is the null value, and here acts as a list terminator.
   
-Lists are ubiquitous in Hoon, and many specialized tools exist to work with them.  (For instance, to apply a gate to each value in a list, or to sum up the values in a list, etc.)  We'll 
+Lists are ubiquitous in Hoon, and many specialized tools exist to work with them.  (For instance, to apply a gate to each value in a list, or to sum up the values in a list, etc.)  We'll see more of them in a future lesson.
 
 #### Exercise:  Making a List from a Null-Terminated Cell
 

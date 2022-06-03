@@ -178,7 +178,7 @@ where ~marzod is the point in question; or more succinctly:
 
 (This previews the irregular syntax of `%-` cenhep; it is equivalent to `%-  sein:title  [our now ~marzod]`.)
 
-### Exercise:  Finding neighbors
+#### Exercise:  Finding neighbors
 
 A neighbor of a point is a point which occupies the point immediately above or below that point's `@ud` number.
 
