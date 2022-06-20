@@ -66,12 +66,12 @@ http: live (insecure, loopback) on 12321
 ~zod:dojo>
 ```
 
-You just used a function from the Hoon standard library, `add`, which for reasons that will become clear later is frequently written [`++add`](https://urbit.org/docs/hoon/reference/stdlib/1a#add).  Next, quit Urbit with `Ctrl`+`d`:
+You just used a function from the Hoon standard library, `add`, which for reasons that will become clear later is frequently written [`++add`](https://urbit.org/docs/hoon/reference/stdlib/1a#add).  Next, quit Urbit by entering `|exit`:
 
 ```hoon
 > %-  add  [2 2]
 4
-~zod:dojo>
+~zod:dojo> |exit
 $
 ```
 
@@ -95,6 +95,15 @@ You'll see:
 You asked Dojo to evaluate `17` and it echoed the number back at you.  This value is a _noun_.  We'll talk more about nouns in the next lesson.
 
 Basically, every Hoon expression operates on the values it is given until it reduces to some form that can't evaluate any farther.  This is then returned as the result of the evaluation.
+
+One more:
+
+```hoon
+> :-  1  2
+[1 2]
+```
+
+This `:-` rune takes two values and composes them into a _cell_, a pair of values.
 
 
 ##  Pronouncing Hoon

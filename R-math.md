@@ -1,5 +1,5 @@
 ---
-title: Gates
+title: Mathematics
 nodes: 234, 236, 284
 objectives:
   - "Review floating-point mathematics including IEEE-754."
@@ -123,7 +123,7 @@ To go the other way requires us to use an algorithm for converting an arbitrary 
 [%d s=%.y e=--3 a=1]
 ```
 
-It's up to you to decide how to handle this result, however!  Perhaps a better option for many cases is to round the answer to an `@s` integer with [`++toi:rs](https://urbit.org/docs/hoon/reference/stdlib/3b#toirs):
+It's up to you to decide how to handle this result, however!  Perhaps a better option for many cases is to round the answer to an `@s` integer with [`++toi:rs`](https://urbit.org/docs/hoon/reference/stdlib/3b#toirs):
 
 ```hoon
 > (toi:rs .3.1415926535)
@@ -239,6 +239,16 @@ To recover an unsigned integer from a signed integer, use [`++old:si`](https://u
 - [`++abs:si`](https://urbit.org/docs/hoon/reference/stdlib/3a#abssi), absolute value
 - [`++cmp:si`](https://urbit.org/docs/hoon/reference/stdlib/3a#synsi), test for greater value (as index, `>` → `--1`, `<` → `-1`, `=` → `--0`)
 
+To convert a floating-point value from number (atom) to text, use [`++scow`](https://urbit.org/docs/hoon/reference/stdlib/4m#scow) or [`++r-co:co`](https://urbit.org/docs/hoon/reference/stdlib/4k#r-coco) with [`++rlys`](https://urbit.org/docs/hoon/reference/stdlib/3b#rlys) (and friends):
+
+```hoon
+> (scow %rs .3.14159)
+".3.14159"
+
+> `tape`(r-co:co (rlys .3.14159))
+"3.14159"
+```
+
 ### Beyond Arithmetic
 
 The Hoon standard library at the current time omits many [transcendental functions](https://en.wikipedia.org/wiki/Transcendental_function), such as the trigonometric functions.  It is useful to implement pure-Hoon versions of these, although they are not as efficient as jetted mathematical code would be.
@@ -309,6 +319,17 @@ The Hoon standard library at the current time omits many [transcendental functio
 
     (We will use these in subsequent examples.)
 
+#### Exercise:  Calculate the Fibonacci Sequence
+
+The Binet expression gives the _n_th Fibonacci number.
+
+<img src="https://latex.codecogs.com/svg.image?\large&space;F_n&space;=&space;\frac{\varphi^n-(-\varphi)^{-n}}{\sqrt&space;5}&space;=&space;\frac{\varphi^n-(-\varphi)^{-n}}{2&space;\varphi&space;-&space;1}" title="https://latex.codecogs.com/svg.image?\large F_n = \frac{\varphi^n-(-\varphi)^{-n}}{\sqrt 5} = \frac{\varphi^n-(-\varphi)^{-n}}{2 \varphi - 1}" />
+
+<!--
+F_n = \frac{\varphi^n-(-\varphi)^{-n}}{\sqrt 5} = \frac{\varphi^n-(-\varphi)^{-n}}{2 \varphi - 1}
+-->
+
+- Implement this analytical formula for the Fibonacci series as a gate.
 
 ##  Date & Time Mathematics
 
@@ -685,12 +706,12 @@ where
 - sgn is the signum or sign function;
 - _t_ is √-ln[min(_U_, 1-_U_)²]; and
 - the constants are:
-  - _c₀_ = 2.515517
-  - _c₁_  .0.802853
-  - _c₂_  .0.010328
-  - _d₁_  .1.532788
-  - _d₂_  .0.189268
-  - _d₃_  .0.001308
+  - _c_₀ = 2.515517
+  - _c_₁ = 0.802853
+  - _c_₂ = 0.010328
+  - _d_₁ = 1.532788
+  - _d_₂ = 0.189268
+  - _d_₃ = 0.001308
 
 <!--
 $$

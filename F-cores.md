@@ -41,30 +41,36 @@ This program adds 1+2+3+4+5 and returns the sum:
 ==
 ```
 
-(The last two lines happen “simultaneously”.)
+(The last two lines happen simultaneously, so make sure to refer to the _current_ version of any variables.)
 
 Let's unroll it:
 
 0.  `counter = 1`
     `sum = 0`
+
 1.  `(gth counter 5) = %.n`
     `counter ← (add counter 1) = 2`
     `sum ← (add sum counter) = 0 + 1 = 1`
+
 2.  `(gth counter 5) = %.n`
     `counter ← (add counter 1) = 3`
     `sum ← (add sum counter) = 1 + 2 = 3`
+
 3.  `(gth counter 5) = %.n`
     `counter ← (add counter 1) = 4`
     `sum ← (add sum counter) = 3 + 3 = 6`
+
 4.  `(gth counter 5) = %.n`
     `counter ← (add counter 1) = 5`
     `sum ← (add sum counter) = 6 + 4 = 10`
+
 5.  `(gth counter 5) = %.n`
     `counter ← (add counter 1) = 6`
     `sum ← (add sum counter) = 10 + 5 = 15`
+
 6.  `(gth counter 5) = %.y`
 
-(And thus `sum` has the final value of `15`.)
+And thus `sum` yields the final value of `15`.
 
 It is frequently helpful, when constructing these, to be able to output the values at each step of the process.  Use the [`~&` sigpam](https://urbit.org/docs/hoon/reference/rune/sig#-sigpam) rune to create output without changing any values:
 
@@ -79,7 +85,7 @@ It is frequently helpful, when constructing these, to be able to output the valu
 ?:  (gth counter 5)
   sum
 %=  $
-  counter  (add counter 1),
+  counter  (add counter 1)
   sum      (add sum counter))
 ==
 ```
@@ -95,31 +101,61 @@ You can do even better using _interpolation_:
 ?:  (gth counter 5)
   sum
 %=  $
-  counter  (add counter 1),
+  counter  (add counter 1)
   sum      (add sum counter))
 ==
 ```
 
-Another example:  let's calculate a factorial.  (This is not the most efficient way to do this!)  We will introduce a couple of new bits of syntax and a new gate (`++dec`).  Make this into a generator `fact.hoon`:
+#### Exercise:  Calculate a Factorial
 
-```hoon
-|=  n=@ud
-|-
-~&  n
-?:  =(n 1)
-  n
-%+  mul
-n
-%=  $
-  n  (dec n)
-==
-```
+- Let's calculate a [factorial](https://mathworld.wolfram.com/Factorial.html).  The factorial of a number _n_ is _n_×(_n_-1)×...×2×1.  We will introduce a couple of new bits of syntax and a new gate (`++dec`).  Make this into a generator `factorial.hoon`:
 
-- We are using the `=` irregular syntax for `.=` dottis, test for equality of two values.
-- We are using the `+` irregular syntax for `.+` dotlus, increment a value (add one to a value).
-- Why do we return the result (`product` in Hoon parlance) at 1 instead of 0?
+    ```hoon
+    |=  n=@ud
+    |-
+    ~&  n
+    ?:  =(n 1)
+      1
+    %+  mul
+    n
+    %=  $
+      n  (dec n)
+    ==
+    ```
 
-One more thing:  as we write more complicated programs, it is helpful to learn to read the runes:
+    - We are using the `=` irregular syntax for the [`.=` dottis](https://urbit.org/docs/hoon/reference/rune/dot#dottis) rune, which tests for the equality of two expressions.
+
+    - We are using the `+` irregular syntax for the [`.+` dotlus](https://urbit.org/docs/hoon/reference/rune/dot#dotlus) rune, which increments a value (adds one).
+
+    ```hoon
+    > +factorial 5
+    120
+    ```
+
+    Let's visualize the operation of this gate using pseudocode (fake code that's explanatory but may not be operational).  Here's basically what's happening when `factorial` receives the value `5`:
+
+    ```hoon
+    (factorial 5)
+    (mul 5 (factorial 4))
+    (mul 5 (mul 4 (factorial 3)))
+    (mul 5 (mul 4 (mul 3 (factorial 2))))
+    (mul 5 (mul 4 (mul 3 (mul 2 (factorial 1)))))
+    (mul 5 (mul 4 (mul 3 (mul 2 1))))
+    (mul 5 (mul 4 (mul 3 2)))
+    (mul 5 (mul 4 6))
+    (mul 5 24)
+    120
+    ```
+
+    We're “floating” gate calls until we reach the final iteration of such calls that only produces a value.  The `mul n` component of the gate leaves `mul 5` waiting for the final series of terms to be operated upon.  The `%=($ n (dec n)))` component expands the expression outwards, as illustrated by `(factorial 4)`.  This continues until the expression is not expanded further, at which point the operations work backwards, successively feeding values into the `mul` functions behind them.
+
+    The pyramid-shaped illustration approximates what's happening on the _call stack_, a memory structure that tracks the instructions of the program.  In this code, every time a parent gate calls another gate, the gate being called is "pushed" to the top of the stack in the form of a frame.  This process continues until a value is produced instead of a function, completing the stack.
+
+    - Why do we return the result (`product` in Hoon parlance) at 1 instead of 0?
+
+#### Exercise:  Tracking Expression Structure
+
+As we write more complicated programs, it is helpful to learn to read the runes by identifying which daughter expressions attach to which runes, e.g.:
 
 ```
 =/
@@ -130,7 +166,7 @@ One more thing:  as we write more complicated programs, it is helpful to learn t
       n
       ?:
         =(n 1)      :: .=  n  1
-        n
+        1
       %+
         mul
         n
@@ -141,7 +177,9 @@ One more thing:  as we write more complicated programs, it is helpful to learn t
         ==
 ```
 
-As we move on from this lesson, we are going to revert to the irregular form.  If you would like to see exactly how one is structured, you can use the [`!,` zapcom](https://urbit.org/docs/hoon/reference/rune/zap#-zapcom) rune.  `!,` zapcom produces an annotated _abstract syntax tree_ (AST) which labels every value and expands any irregular syntax into the regular runic form.
+Recall that the `::` digraph tells the compiler to ignore the rest of the text on the line.  Such text is referred to as a "comment" because, instead of performing a computation, it exists to explain things to human readers of the source code.  Here, we have also explicitly marked the expansion of the irregular forms.
+
+We will revert to the irregular form more and more.  If you would like to see exactly how an expression is structured, you can use the [`!,` zapcom](https://urbit.org/docs/hoon/reference/rune/zap#-zapcom) rune.  `!,` zapcom produces an annotated _abstract syntax tree_ (AST) which labels every value and expands any irregular syntax into the regular runic form.
 
 ```hoon
 > !,  *hoon  (add 5 6)
@@ -153,7 +191,7 @@ As we move on from this lesson, we are going to revert to the irregular form.  I
  |-  
  ~&  n  
  ?:  =(n 1)  
-   n  
+   n 1
  %+  mul  
  n  
  %=  $  
@@ -185,49 +223,49 @@ As we move on from this lesson, we are going to revert to the irregular form.  I
 
 (_There's a lot going on in there._  Focus on the four-letter runic identifiers:  `%sgpm` for `~&` sigpam, for instance.)
 
-> ##  Calculate a sequence of numbers
->
-> Produce a gate (generator) which accepts a `@ud` value and
-> calculates the series where each term is described by
-> 
-> $$
-> n_{i} = i^{2}
-> \textrm{,}
-> $$
->
-> that is, the first numbers are 0, 1, 4, 9, 16, 25, etc.
->
-> You do not need to store these values in a list; simply output
-> them at each step using `~&` sigpam and return the final value.
-{: .challenge}
+####  Exercise:  Calculate a sequence of numbers
 
-> ##  Output each letter in a `tape`
->
-> Produce a gate (generator) which accepts a `tape` value and
-> prints out each letter in order on a separate line.
->
-> For example, given the `tape` `"hello"`, the generator should 
-> print out
-> 
-> 'h'
-> 'e'
-> 'l'
-> 'l'
-> 'o'
->
-> You do not need to store these values in a list; simply output
-> them at each step using `~&` sigpam and return the final value.
-> 
-> You can retrieve the _n_-th element in a `tape` using the 
-> `++snag` gate:
-> 
-> ```
-> > =/  n  0  (snag n "hello")
-> 'h'
-> ```
-> 
-> (Note that `++snag` counts starting at zero, not one.)
-{: .challenge}
+Produce a gate (generator) which accepts a `@ud` value and calculates the series where the *i*th term in the series is given by the equation
+
+![](https://latex.codecogs.com/png.image?\large%20\dpi{110}n_{i}%20=%20i^{2}\textrm{,})
+
+<!--
+$$
+n_{i} = i^{2}
+\textrm{,}
+$$
+-->
+
+that is, the first numbers are 0, 1, 4, 9, 16, 25, etc.
+
+For this exercise, you do not need to store these values in a list.  Calculate each one but only return the final value.
+
+####  Exercise:  Output each letter in a `tape`
+
+Produce a gate (generator) which accepts a `tape` value and returns a `(list @ud)` containing the ASCII value of each character.  Use a `|-` barhep trap.
+
+The previous code simply modified a value by addition.  You can generalize this to other arithmetic processes, like multiplication, but you can also grow a data structure like a list.
+
+For example, given the `tape` `"hello"`, the generator should return the list `~[104 101 108 108 111]`.
+
+Two tools that may help:
+
+- You can retrieve the _n_-th element in a `tape` using the [`++snag`](https://urbit.org/docs/hoon/reference/stdlib/2b#snag) gate, e.g. `(snag 3 `(list @ud)`~[1 2 3 4 5])` yields `4` (so `++snag` is zero-indexed; it counts from zero).
+- You can join an element to a list using the [`++snoc`](https://urbit.org/docs/hoon/reference/stdlib/2b#snoc) gate, e.g. `(snoc `(list @ud)`~[1 2 3] 4)` yields `~[1 2 3 4]`.
+
+```hoon
+|=  [input=tape]
+=/  counter  0
+=/  results  *(list @ud)
+|-
+?:  =(counter (lent input))
+  results
+=/  ascii  `@ud`(snag counter input)
+%=  $
+  counter  (add counter 1)
+  results  (snoc results ascii)
+==
+```
 
 
 ##  Cores
@@ -241,27 +279,29 @@ So far we have introduced and worked with a few key structures:
 
 Some of them are _data_, like raw values:  `0x1234.5678.abcd` and `[5 6 7]`.  Others are _code_, programs that do something.  What unifies all of these under the hood?
 
-A core is a cell pairing operations to data.  (Think back to Lesson -1:  we have state, data, and operations.  Cores represent two of these.)  Formally, we'll say a core is a cell `[battery payload]`, where `battery` describes the things that can be done (the operations) and `payload` describes the data on which those operations rely.
-
-(I feel like “battery” evokes the voltaic pile more than a bank of guns, but the latter actually does something directly.  Actually, come to think of it this is entirely an artillery metaphor.)
+A core is a cell pairing operations to data.  Formally, we'll say a core is a cell `[battery payload]`, where `battery` describes the things that can be done (the operations) and `payload` describes the data on which those operations rely.  (For many English speakers, the word “battery” evokes a [voltaic pile](https://en.wikipedia.org/wiki/Voltaic_pile) more than a bank of guns, but the artillery metaphor is a better mnemonic for `[battery payload]`.)
 
 **Cores are the most important structural concept for you to grasp in Hoon.**  Everything nontrivial is a core.  Some of the runes you have used already produce cores, like the gate.  That is, a gate marries a `battery` (the operating code) to the `payload` (the input values AND the “subject” or operating context).
 
-Urbit adopts an innovative programming paradigm called “subject-oriented programming.”  By and large, Hoon (and Nock) is a functional programming language in that running a piece of code twice will always yield the same result.
+Urbit adopts an innovative programming paradigm called _subject-oriented programming_.  By and large, Hoon (and Nock) is a functional programming language in that running a piece of code twice will always yield the same result, and because runs cause a program to explicitly compose various subexpressions in a somewhat mathematical way.
 
-However, Hoon also very carefully bounds the known context of any part of the program as the _subject_.  Basically, the subject is the noun against which any arbitrary Hoon code is evaluated.
+Hoon (and Nock) very carefully bounds the known context of any part of the program as the _subject_.  Basically, the subject is the noun against which any arbitrary Hoon code is evaluated.
 
 For instance, when we first composed generators, we made what are called “naked generators”:  that is, they do not have access to any information outside of the base subject (Arvo, Hoon, and `%zuse`) and their sample (arguments).  Other generators (such as `%say` generators, described below) can have more contextual information, including random number generators and optional arguments, passed to them to form part of their subject.
 
-Cores have two kinds of values attached:  arms and legs, both called limbs.  Arms describe known labeled addresses (with `++` luslus or `+$` lusbuc) which carry out computations.  Legs are limbs which store data.
-
-![](https://davis68.github.io/martian-computing/img/08-nubret.png)
+Cores have two kinds of values attached:  arms and legs, both called limbs.  Arms describe known labeled addresses (with `++` luslus or `+$` lusbuc) which carry out computations.  Legs are limbs which store data (with e.g. `/=` tisfas).
 
 ### Arms
 
-An [_arm_](https://urbit.org/docs/glossary/arm) is a Hoon expression to be evaluated against the core subject (i.e. its parent core is its subject).
+So legs are for data and arms are for computations.  But what _specifically_ is an arm, and how is it used for computation?  Let's begin with a preliminary explanation that we'll refine later.
 
-Within a core, we label arms as Hoon expressions (frequently `|=` bartis gates) using the [`++` luslus](https://urbit.org/docs/hoon/reference/rune/lus#-luslus) digraph.  (`++` isn't formally a rune because it doesn't actually change the structure of a Hoon expression.)
+An _arm_ is some expression of Hoon encoded as a noun.  (By 'encoded as a noun' we literally mean: 'compiled to a Nock formula'.  But you don't need to know anything about Nock to understand Hoon.)  You virtually never need to treat an arm as raw data, even though technically you can—it's just a noun like any other.  You almost always want to think of an arm simply as a way of running some Hoon code.
+
+Every expression of Hoon is evaluated relative to a subject.  An [_arm_](https://urbit.org/docs/glossary/arm) is a Hoon expression to be evaluated against the core subject (i.e. its parent core is its subject).
+
+#### Arms for Gates
+
+Within a core, we label arms as Hoon expressions (frequently `|=` bartis gates) using the [`++` luslus](https://urbit.org/docs/hoon/reference/rune/lus#-luslus) digraph.  (`++` isn't formally a rune because it doesn't actually change the structure of a Hoon expression, it simply marks a name for an expression or value.  The `--` hephep limiter digraph is used because `|%` barcen can have any number of arms attached.  Like `++`, it is not formally a rune.)
 
 ```hoon
 |%
@@ -276,9 +316,25 @@ Within a core, we label arms as Hoon expressions (frequently `|=` bartis gates) 
 --
 ```
 
-(The `--` hephep limiter is used because `|%` barcen can have any number of arms attached.)
+Give the name `adder` to the above, and use it thus:
 
-We can also define custom types using [`+$` lusbuc](https://urbit.org/docs/hoon/reference/rune/lus#-lusbuc) digraphs.  We won't do much with these yet but they will come in handy for custom types later on.
+```hoon
+> (add-one:adder 5)
+6
+
+> (sub-one:adder 5)
+4
+```
+
+Notice here that we read the arm resolution from right-to-left.  This isn't the only way to address an arm, but it's the most common one.
+
+#### Exercise:  Produce a Gate Arm
+
+- Compose a core which contains arms for multiplying a value by two and for dividing a value by two.
+
+#### Arms for Types
+
+We can define custom types for a core using [`+$` lusbuc](https://urbit.org/docs/hoon/reference/rune/lus#-lusbuc) digraphs.  We won't do much with these yet but they will come in handy for custom types later on.
 
 This core defines a set of types intended to work with playing cards:
 
@@ -290,6 +346,8 @@ This core defines a set of types intended to work with playing cards:
 +$  deck  (list card)
 ---
 ```
+
+#### Cores in Generators
 
 When we write generators, we can include helpful tools as arms either before the main code (with `=>` tisgar) or after the main code (with `=<` tisgal):
 
@@ -309,16 +367,85 @@ A library (a file in `/lib`) is typically structured as a `|%` barcen core.
 
 ### Legs
 
-A [_leg_](https://urbit.org/docs/hoon/hoon-school/the-subject-and-its-legs) is a data value.  They tend to be rather trivial but useful ways to pin constants.  `=/` tisfas values are legs.
+A [_leg_](https://urbit.org/docs/hoon/hoon-school/the-subject-and-its-legs) is a data value.  They tend to be trivial but useful ways to pin constants.  `=/` tisfas values are legs, for instance.
 
-TODO
+```hoon
+> =/  a  1
+  +(a)
+2
+```
 
-https://urbit.org/docs/hoon/hoon-school/gates#what-is-a-gate
-https://urbit.org/docs/hoon/hoon-school/gates#anatomy-of-a-gate
+Under the hood, legs and arms are distinguished by the Nock instructions used in each case.  A leg is evaluated by Nock 0, while an arm is evaluated by Nock 9.
 
-#### Exercise:  Three Ways to Calculate a Factorial
+### Recalculating a Limb
 
-trap, then gate, then tail-call gate
+Arms and legs are both _limbs_.  Either one can be replaced in a given subject.  This turns out to be very powerful, and permits Hoon to implement gates (functions) in a mathematically rigorous way, among other applications.
+
+Often a leg of the subject is produced with its value unchanged. But there is a way to produce a modified version of the leg as well. To do so, we use the `%=` cenhep rune:
+
+```hoon
+%=  subject-limb
+  leg-1  new-leg-1
+  leg-2  new-leg-2
+  ...
+==
+```
+
+`%=` cenhep is frequently used in its irregular form, particularly if the expression within it fits on a single line.  The irregular form prepends the arm (often `$`) to parentheses `()`.  In its irregular form, the above would be:
+
+```hoon
+subject-limb(leg-1 new-leg-1, leg-2 new-leg-2, ...)
+```
+
+In the first example, we saw the expression
+
+```hoon
+%=  $
+  counter  (add counter 1)
+  sum      (add sum counter)
+==
+```
+
+which can equivalently be expressed as
+
+```hoon
+$(counter (add counter 1), sum (add sum counter))
+```
+
+This statement means that we recalculate the `$` buc arm of the current subject with the indicated changes.  But what is `$` buc?  `$` buc is the _default arm_ for many core structures, including `|=` bartis gate cores and `|-` barhep trap cores.
+
+#### Exercise:  Another Way to Calculate a Factorial
+
+Let's revisit our factorial code from above:
+
+```hoon
+|=  n=@ud
+|-
+?:  =(n 1)
+  1
+%+  mul
+n
+%=  $
+  n  (dec n)
+==
+```
+
+We can write this code in several ways using the `%=` cenhep plus `$` buc structure.
+
+For instance, we can eliminate the trap by recursing straight back to the gate:
+
+```hoon
+|=  n=@ud
+?:  =(n 1)
+  1
+%+  mul
+n
+%=  $
+  n  (dec n)
+==
+```
+
+Even more compactly, `(add counter 1)` can be replaced by the Nock increment rune, [`.+` dotlus](https://urbit.org/docs/hoon/reference/rune/dot#-dotlus), for the equivalent version:
 
 ```hoon
 |=  n=@ud
@@ -327,134 +454,277 @@ trap, then gate, then tail-call gate
 (mul n $(n (dec n)))
 ```
 
-##  Tutorial:  List of Numbers
+(Remember that sugar syntax like `$()` does not affect code efficiency, merely visual layout.)
 
-_This tutorial is intended to familiarize you with the basics of Hoon syntax.  It's okay if you don't understand everything immediately; some concepts may be beyond your grasp for now.  What's important is that you become accustomed to the elements of the code and their look once combined into a valid program._
+### Recursion
 
-Below is a simple Hoon program that takes a single number `n` as input with the `=/` tisfas and produces a list of numbers from `1` up to (but not including) `n`. So, if the user gives the number `5`, the program will produce: `~[1 2 3 4]`.
+_Recursion_ refers to a return to the same logical point in a program again and again.  It's a common pattern for solving certain problems in most programming languages, and Hoon is no exception.
 
-```hoon
-|=  end=@                                               ::  1
-=/  count=@  1                                          ::  2
-|-                                                      ::  3
-^-  (list @)                                            ::  4
-?:  =(end count)                                        ::  5
-  ~                                                     ::  6
-:-  count                                               ::  7
-$(count (add 1 count))                                  ::  8
-```
+In a formal sense, we have to make sure that there is always a base case, a way of actually ending the recursion—if there isn't, we end up with an [infinite loop](https://en.wikipedia.org/wiki/Infinite_loop)!  Children's songs like [“Yon Yonson”](https://en.wikipedia.org/wiki/Yon_Yonson) or [“The Song That Never Ends”](https://en.wikipedia.org/wiki/The_Song_That_Never_Ends) sometimes rely on such recursive humor.
 
-As we mentioned in the previous lesson, the easiest way to use such a program is to run it as a _generator_. Mount your `%base` desk with `|mount %base` (if you didn't do it before), saving a file in the `base/gen` directory of your ship and commiting these changes `|commit %base` allows you to run it from your ship's Dojo (command line) as a generator. Save the above code there as `list.hoon`.
+> This is the song that never ends
+> Yes, it goes on and on, my friends
+> Some people started singing it not knowing what it was
+> And they′ll continue singing it forever just because—
+>
+> This is the song that never ends
+> . . .
 
-**Note**: If you're using VS Code on Windows, you might need to manually change the line endings from CRLF to LF in the status bar at the bottom. Urbit requires Unix-style line endings for Hoon files.
-
-Now you can run it in the Dojo with the command below (remember, without the `>`):
-
-`> +list 5`
-
-Try it! You can choose any natural number to put after `+list`, but it can't be `0` or blank. The `+` lets the Dojo know that it's looking for a generator with the name that follows. You don't write out the `.hoon` part of the file name when running it in the Dojo.
-
-But what do all these squiggly symbols in the program _do_? It probably isn't immediately clear. Let's go through each component of this code.
-
-## The Code
-
-You probably noticed that there's a column of colons and numbers in our example. The `::` digraph tells the compiler to ignore the rest of the text on the line. Such text is referred to as a "comment" because, instead of performing a computation, it exists to explain things to human readers of the source code.
-
-In our example program, we use comments with line numbers for convenient reference, so that we can dig into the code line by line. Important Hoon concepts will be bolded when first mentioned.
-
-### Line 1
+You need to make sure when you compose a trap that it has a base case which returns a noun.  The following trap results in an infinite loop:
 
 ```hoon
-|=  end=@
-```
-
-There's a few things going on in our first line. The first part of it, `|=`, is a kind of **rune**. Runes are the building blocks of all Hoon code, represented as a pair of non-alphanumeric ASCII characters. Runes form expressions; runes are used how keywords are used in other languages. In other words, all computations in Hoon ultimately require runes. Runes and other Hoon expressions are all separated from one another by either two spaces or a line break.
-
-All runes take a fixed number of "children". Children can themselves be runes with children, and Hoon programs work by chaining through these until a value -- not another rune -- is arrived at. For this reason, we very rarely need to close expressions. Keep this scheme in mind when examining Hoon code.
-
-The specific purpose of the `|=` rune is to create a **gate**. A [gate](https://urbit.org/docs/glossary/gate/) is what would be called a function in other languages: it takes an input, performs a specified computation, and then produces an output.
-
-Because we're only on line 1, all we're doing with the gate is creating it, and then specifying what kind of input the gate takes with that rune's first child: `end=@`. The `end` part of our code is simply a name that we give to the user's input so that we can use the number later. `=@` means that we restrict the kind of input that our gate accepts to the **atom** type, or `@` for short. An [atom](https://urbit.org/docs/glossary/atom/) is a natural number.
-
-Our program is simple, so the _entire program_ is the gate that's being created here. The rest of our lines of code are part of the second child of our gate, and they determine how our gate produces an output.
-
-### Line 2
-
-```hoon
-=/  count=@  1
-```
-
-This line begins with the `=/` rune, which stores a value with a name and specifies its type. It takes three children.
-
-`count=@` (the first child) stores `1` (the second child) as `count` and specifies that it has the `@` type.
-
-We're using `count` to keep track of what numbers we're including in the list we're building. We'll use it later in the program.
-
-### Line 3
-
-```hoon
+=/  index  1
 |-
+?:  (lth index 1)  ~
+$(index +(index))
 ```
 
-The `|-` rune functions as a "restart" point for recursion that will be defined later. It takes one child.
+If you find yourself caught in such a loop, press `Ctrl`+`C` to stop execution.
 
-### Line 4
+Recursion can be set up different ways.  A full treatment requires thinking about [algorithmic complexity and efficiency](https://en.wikipedia.org/wiki/Big_O_notation), but we can highlight some good rules of thumb here.
+
+#### Exercise:  The Fibonacci Sequence
+
+For instance, let's talk about calculating the [Fibonacci sequence](https://en.wikipedia.org/wiki/Fibonacci_sequence), which is a sequence of numbers wherein each is formed by adding the two previous numbers together.  Thus 1, 1, 1+1→2, 1+2→3, 2+3→5, and so forth.  We may write the _n_th Fibonacci number in a generic way as:
+
+<img src="https://latex.codecogs.com/gif.image?\large&space;\dpi{110}F_n&space;=&space;F_{n-1}&space;&plus;&space;F_{n-2}" title="https://latex.codecogs.com/gif.image?\large \dpi{110}F_n = F_{n-1} + F_{n-2}" />
+
+<!--
+F_n = F_{n-1} + F_{n-2}
+-->
+
+and verify that our program correctly produces the sequence of numbers 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, ….
+
+- Compose a Fibonacci sequence program which produces a `list` of the appropriate values.
+
+    We can elide some details of working with `list`s until the next lesson; simply recall that they are a way of storing multiple values in a cell of cells of cells….
+
+    The most naïve version of this calculation simply calculates all previous numbers in the sequence every time they are needed.
+
+    ```hoon
+    |=  n=@ud
+    ^-  @ud
+    ?:  =(n 1)  1
+    ?:  =(n 2)  1
+    (add $(n (dec n)) $(n (dec (dec n))))
+    ```
+
+    We can use _two_ recursion points for `%=` cenhep.  The first calculate _F_ for _n_-1; the second calculate _F_ for _n_-2.  These are then added together.  If we diagram what's happening, we can see that each additional number costs as much as the previous numbers:
+
+    ```
+    (fibonacci 5)
+    (add (fibonacci 4) (fibonacci 3))
+    (add (add (fibonacci 3) (fibonacci 2)) (add (fibonacci 2) (fibonacci 1)))
+    (add (add (add (fibonacci 2) (fibonacci 1)) (fibonacci 2)) (add (fibonacci 2) (fibonacci 1)))
+    (add (add (add 1 1) 1) (add 1 1))
+    5
+    ```
+
+    ```
+    (fibonacci 6)
+    (add (fibonacci 5) (fibonacci 4))
+    ...
+    (add (add (add (add (fibonacci 2) (fibonacci 1)) (fibonacci 2)) (add (fibonacci 2) (fibonacci 1))) (add (add (fibonacci 2) (fibonacci 1)) (fibonacci 2)))
+    (add (add (add (add 1 1) 1) (add 1 1)) (add (add 1 1) 1))
+    8
+    ```
+
+    This fully recursive version of the Fibonacci calculation is very wasteful because it keeps no intermediate results.
+
+    An improved version stores each value in the sequence as an element in a list so that it can be used rather than re-calculated.  We use the [`++snoc`](https://urbit.org/docs/hoon/reference/stdlib/2b#snoc) gate to append a noun to a `list`.
+
+    ```hoon
+    |=  n=@ud
+    =/  index  0
+    =/  p  0
+    =/  q  1
+    =/  r  *(list @ud)
+    |-  ^-  (list @ud)
+    ?:  =(index n)  r
+    ~&  >  [index p q r]
+    %=  $
+      index  +(index)
+      p      q
+      q      (add p q)
+      r      (snoc r q)
+    ==
+    ```
+
+    This version is a little more complicated to compare using a diagram because of the trap, but yields something like this:
+
+    ```
+    (fibonacci 5)
+    ~[1]
+    ~[1 1]
+    ~[1 1 2]
+    ~[1 1 2 3]
+    ~[1 1 2 3 5]
+    ```
+
+    The program can be improved somewhat again by appending to the head of the cell (rather than using `++snoc`).  This builds a list in a backwards order, so we apply the [`++flop`](https://urbit.org/docs/hoon/reference/stdlib/2b#flop) gate to flip the order of the list before we return it.
+
+    ```hoon
+    |=  n=@ud
+    %-  flop
+    =/  index  0
+    =/  p  0
+    =/  q  1
+    =/  r  *(list @ud)
+    |-  ^-  (list @ud)
+    ?:  =(i n)  r
+    %=  $
+      i  +(i)
+      p  q
+      q  (add p q)
+      r  [q r]
+    ==
+    ```
+
+    Why are we building the list backwards instead of just producing the list in the order we want it in the first place?  Because with lists, adding an element to the end is a computationally expensive operation that gets more expensive the longer the list is, due to the fact that you need to traverse to the end of the tree.  Adding an element to the front, however, is cheap.  In Big-O notation, adding to the end of a list is _O_(_n_) while adding to the front is _O_(1).
+
+    Here's our diagram:
+
+    ```
+    (fibonacci 5)
+    ~[1]
+    ~[1 1]
+    ~[2 1 1]
+    ~[3 2 1 1]
+    ~[5 3 2 1 1]
+    ~[1 1 2 3 5]
+    ```
+
+    Finally (and then we'll move along) here's a very efficient implementation, which starts with a `0` but builds the list entirely from cells, then appends the `~` `0` at the end:
+
+    ```hoon
+    |=  n=@ud
+    ^-  (list @ud)
+    =/  f0  *@ud
+    =/  f1=@ud  1
+    :-  0
+    |-  ^-  (list @ud)
+    ?:  =(n 0)
+      ~
+    [f1 $(f0 f1, f1 (add f0 f1), n (dec n))]
+    ```
+
+    - Produce a diagram of how this last implementation yields a Fibonacci sequence for _F_₅, `(fibonacci 5)`.
+
+#### Exercise:  Tail-Call Optimization of the Factorial Gate
+
+The last factorial gate we produced looked like this:
 
 ```hoon
-^-  (list @)
+|=  n=@ud
+?:  =(n 1)
+  1
+(mul n $(n (dec n)))
 ```
 
-The `^-` rune constrains output to a certain type. It takes two children.
+This example isn't a very efficient use of computing resources.  The pyramid-shaped illustration from up above approximates what's happening on the _call stack_, a memory structure that tracks the instructions of the program.  In our example code, every time a parent gate calls another gate, the gate being called is "pushed" to the top of the stack in the form of a frame.  This process continues until a value is produced instead of a function, completing the stack.
 
-In this case, the rune specifies that our gate's output must be `(list @)` -- that is, a list of atoms.
-
-### Lines 5 and 6
-
-```hoon
-?:  =(end count)
-  ~
+```
+                  Push order      Pop order
+(fifth frame)         ^               |
+(fourth frame)        |               |
+(third frame)         |               |
+(second frame)        |               |
+(first frame)         |               V
 ```
 
-`?:` is a rune that evaluates whether its first child is `true` or `false`. If that child is `true`, the program branches to the second child. If it's `false`, it branches to the third child. `?:` takes three children.
+Once this stack of frames is completed, frames "pop" off the stack starting at the top.  When a frame is popped, it executes the contained gate and passes produced data to the frame below it.  This process continues until the stack is empty, giving us the gate's output.
 
-`=(end count)` checks if the user's input equals to the `count` value that we're incrementing to build the list. If these values are equal, we want to end the program, because our list has been built out to where it needs to be. Note that this expression is, in fact, a rune expression, just written a different way than you've seen so far. `=(end count)` is an _irregular form_ of `.= end count`, different in looks but identical in operation. `.=` is a rune that checks for the equality of its two children, and produces a `true` or `false` based on what it finds.
+When a program's final expression uses the stack in this way, it's considered to be **not tail-recursive**.  This usually happens when the last line of executable code calls more than one gate, our example code's `(mul n $(n (dec n)))` being such a case.  That's because such an expression needs to hold each iteration of `$(n (dec n)` in memory so that it can know what to run against the `mul` function every time.
 
-`~` simply represents the `null` value. The program branches here if on line 5 it finds that `end` equals `count`. Lists in Hoon always end with `~`, so we need this to be the last thing we put in our list.
+To reiterate:  if you have to manipulate the result of a recursion as the last expression of your gate, as we did in our example, the function is not tail-recursive, and therefore not very efficient with memory.  A problem arises when we try to recurse more times than we have space on the stack.  This will result in our computation failing and producing a stack overflow.  If we tried to find the factorial of `5.000.000`, for example, we would almost certainly run out of stack space.
 
-## Line 7
+But the Hoon compiler, like most compilers, is smart enough to notice when the last statement of a parent can reuse the same frame instead of needing to add new ones onto the stack.  If we write our code properly, we can use a single frame that simply has its values replaced with each recursion.
 
-`:-` is a rune that creates a **cell**, an ordered pair of two values, such as `[1 2]`. It takes two children.
+- Change the order of the aspects of the call in such a way that the compiler can produce a more [tail-recursive](https://en.wikipedia.org/wiki/Tail_call) program.
 
-In our case, `:- count` creates a cell out of whatever value is stored in `count`, and then with the product of line 8.
+    With a bit of refactoring, we can write a version of our factorial gate that is tail-recursive and can take advantage of this feature:
 
-## Line 8
+    ```hoon
+    |=  n=@ud
+    =/  t=@ud  1
+    |-
+    ^-  @ud
+    ?:  =(n 1)  t
+    $(n (dec n), t (mul t n))
+    ```
 
-```hoon
-$(count (add 1 count))
-```
+    The above code should look familiar.  We are still building a gate that takes one argument a `@ud` unsigned decimal integer `n`.  The `|-` here is used to create a new gate with one [arm](https://urbit.org/docs/glossary/arm) `$` and immediately call it.  As before, think of `|-` as the recursion point.
 
-The above code is, once again, a compact way of writing a rune expression. All you need to know is that this line of code restarts the program at `|-`, except with the value stored in `count` incremented by `1`. The construction of `(count (add 1 count))` tells the computer, "replace the value of `count` with `count+1`".
+    We then evaluate `n` to see if it is 1. If it is, we return the value of `t`. In case that `n` is anything other than 1, we perform our recursion:
 
-You'll notice that we use an unfamiliar word here: `add`. Unlike `count` and `end`, `add` is not defined anywhere in our program. That's because it's a gate that's predefined in the Hoon **standard library**. The standard library is filled with pre-defined gates that are generally useful, and these gates can be used just like something that you defined in your own program. You can see this gate, and other mathematical operators, in [section 1a](https://urbit.org/docs/hoon/reference/stdlib/1a) of the standard library documentation.
+    ```hoon
+    $(n (dec n), t (mul t n))
+    ```
 
-## Explanation
+    All we are doing here is recursing our new gate and modifying the values of `n` and `t`. `t` is used as an accumulator variable that we use to keep a running total for the factorial computation.
 
-If you aren't clear on how the program is building the list, that's okay.
+    Let's use more of our pseudo-Hoon to illustrate how the stack is working in this example for the factorial of 5.
 
-Our program works by having each iteration of the list creating a cell. In each of these cells, the head -- the cell's first position -- is filled with the current-iteration value of `count`. The tail of the cell, its second position, is filled with _the product of a new iteration of our code_ that starts at `|-`. This iteration will itself create another cell, the head of which will be filled by the incremented value of `count`, and the tail of which will start another iteration. This process continues until `?:` branches to `~` (`null`). When that happens, the list is terminated and the program doesn't have anything else to do, so it ends. So, a built-out list of nested cells can be visualized like this:
+    ```
+    (factorial 5)
+    (|- 5 1)
+    (|- 4 5)
+    (|- 3 20)
+    (|- 2 60)
+    (|- 1 120)
+    120
+    ```
 
-```unknown
-   [1 [2 [3 [4 ~]]]]
+    We simply multiply `t` and `n` to produce the new value of `t`, and then decrement `n` before repeating. Since this `$` call is the final and solitary thing that is run in the default case and since we are doing all computation before the call, this version is properly tail-recursive. We don't need to do anything to the result of the recursion except recurse it again. That means that each iteration can be replaced instead of held in memory.
 
-          .
-         / \
-        1   .
-           / \
-          2   .
-             / \
-            3   .
-               / \
-              4   ~
-```
+#### Exercise:  The Ackermann Function
 
-If you still don't intuit how this is working, don't worry. We'll take a deeper look into recursion later with our [Recursion Walkthrough](https://urbit.org/docs/hoon/hoon-school/recursion).
+The [Ackermann function](https://en.wikipedia.org/wiki/Ackermann_function) is one of the earliest examples of a function that is both totally computable—meaning that it can be solved—and not primitively recursive—meaning it can not be rewritten in an iterative fashion.
+
+<img src="https://latex.codecogs.com/svg.image?\large&space;\begin{array}{lcl}\operatorname{A}(0,&space;n)&space;&&space;=&space;&&space;n&space;&plus;&space;1&space;\\\operatorname{A}(m&plus;1,&space;0)&space;&&space;=&space;&&space;\operatorname{A}(m,&space;1)&space;\\\operatorname{A}(m&plus;1,&space;n&plus;1)&space;&&space;=&space;&&space;\operatorname{A}(m,&space;\operatorname{A}(m&plus;1,&space;n))\end{array}" title="https://latex.codecogs.com/svg.image?\large \begin{array}{lcl}\operatorname{A}(0, n) & = & n + 1 \\\operatorname{A}(m+1, 0) & = & \operatorname{A}(m, 1) \\\operatorname{A}(m+1, n+1) & = & \operatorname{A}(m, \operatorname{A}(m+1, n))\end{array}" />
+
+<!--
+\begin{array}{lcl}
+\operatorname{A}(0, n) & = & n + 1 \\
+\operatorname{A}(m+1, 0) & = & \operatorname{A}(m, 1) \\
+\operatorname{A}(m+1, n+1) & = & \operatorname{A}(m, \operatorname{A}(m+1, n))
+\end{array}
+-->
+
+- Compose a gate that computes the Ackermann function.
+
+    ```hoon
+    |=  [m=@ n=@]
+    ^-  @
+    ?:  =(m 0)  +(n)
+    ?:  =(n 0)  $(m (dec m), n 1)
+    $(m (dec m), n $(n (dec n)))
+    ```
+
+    This gate accepts two arguments of `@` atom type and yields an atom.
+
+    There are three cases to consider:
+
+    1.  If `m` is zero, return the increment of `n`.
+    2.  If `n` is zero, decrement `m`, set `n` to 1 and recurse.
+    3.  Else, decrement `m` and set `n` to be the value of the Ackermann function with `n` and the decrement of `n` as arguments.
+
+The Ackermann function is not terribly useful in and of itself, but it has an interesting history in mathematics.  When running this function the value grows rapidly even for very small input.  The value of computing this where `m` is `4` and `n` is `2` is an integer with 19,729 digits.
+
+- Calculate some of the _m_/_n_ pairs given in [the table](https://en.wikipedia.org/wiki/Ackermann_function#Table_of_values).
+
+#### Exercise:  The Sudan Function
+
+The [Sudan function](https://en.wikipedia.org/wiki/Sudan_function) is related to the Ackermann function.
+
+<img src="https://latex.codecogs.com/svg.image?\large&space;\begin{array}{lll}F_0&space;(x,&space;y)&space;&&space;=&space;x&plus;y&space;\\F_{n&plus;1}&space;(x,&space;0)&space;&&space;=&space;x&space;&&space;\text{if&space;}&space;n&space;\ge&space;0&space;\\F_{n&plus;1}&space;(x,&space;y&plus;1)&space;&&space;=&space;F_n&space;(F_{n&plus;1}&space;(x,&space;y),&space;F_{n&plus;1}&space;(x,&space;y)&space;&plus;&space;y&space;&plus;&space;1)&space;&&space;\text{if&space;}&space;n\ge&space;0&space;\\\end{array}" title="https://latex.codecogs.com/svg.image?\large \begin{array}{lll}F_0 (x, y) & = x+y \\F_{n+1} (x, 0) & = x & \text{if } n \ge 0 \\F_{n+1} (x, y+1) & = F_n (F_{n+1} (x, y), F_{n+1} (x, y) + y + 1) & \text{if } n\ge 0 \\\end{array}" />
+
+<!--
+\begin{array}{lll}
+F_0 (x, y) & = x+y \\
+F_{n+1} (x, 0) & = x & \text{if } n \ge 0 \\
+F_{n+1} (x, y+1) & = F_n (F_{n+1} (x, y), F_{n+1} (x, y) + y + 1) & \text{if } n\ge 0 \\
+\end{array}
+-->
+
+- Implement the Sudan function as a gate.

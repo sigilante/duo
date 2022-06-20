@@ -391,7 +391,7 @@ We can have more complex molds as well:
 [[@p @p] @ud]
 ```
 
-Most of the time, we will define such complex types using specific runes and “mold builder” tools.
+Most of the time, we will define such complex types using specific runes and “mold builder” tools.  Thus a `list` needs an associated type `(list @)` to correctly denote the data type.
 
 ### Identifying Molds
 

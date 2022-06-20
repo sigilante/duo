@@ -134,6 +134,8 @@ The [`hoon`](https://urbit.org/docs/hoon/reference/stdlib/4o#hoon) body expressi
 
 The input value, what is included in the `spec`, is sometimes called the argument or parameter in mathematics and other programming languages.  It's basically the input value.  Hoon prefers to call it the `sample` for reasons that will become apparent later on, but you won't confuse other developers if you call it the argument or input.
 
+Note as well that the backbone of the program runs straight down the left-hand margin.  This makes it easier to read the essential mainline logic of the program.
+
 Gates enforce the type of incoming and outgoing values.  In other words, a `spec` is a kind of type which is fixing the possible noun inputs.  (The lesson on types which follows this one will go into greater detail.)
 
 Gates can take multiple arguments as a cell:
@@ -353,6 +355,8 @@ Hoon source files are composed almost entirely of the printable ASCII characters
 > "Some UTF-8: ἄλφα"
 "Some UTF-8: ἄλφα"
 ```
+
+**Note**: If you're using VS Code on Windows, you might need to manually change the line endings from Windows-style `CRLF` to Unix-style `LF` in the status bar at the bottom.  Urbit requires Unix-style line endings for Hoon files.
 
 #### Exercise:  Triangular Function
  

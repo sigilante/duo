@@ -25,6 +25,10 @@ In this lesson we will give a general overview of Hoon’s syntax. By the end of
 
 An [**expression**](https://en.wikipedia.org/wiki/Expression_%28computer_science%29) is a combination of characters that a language interprets and evaluates to produce a value.  All Hoon programs are built of expressions, rather like mathematical equations.  Hoon expressions are built along a backbone of _runes_, which are two-character symbols that act like keywords in other programming languages to define the syntax, or grammar, of the expression.
 
+Runes are the building blocks of all Hoon code, represented as a pair of non-alphanumeric ASCII characters.  Runes form expressions; runes are used how keywords are used in other languages.  In other words, all computations in Hoon ultimately require runes.  Runes and other Hoon expressions are all separated from one another by either two spaces or a line break.
+
+All runes take a fixed number of “children” or “daughters”.  Children can themselves be runes with children, and Hoon programs work by chaining through these until a value—not another rune—is arrived at.  For this reason, we very rarely need to close expressions.  Keep this scheme in mind when examining Hoon code.
+
 Hoon expressions can be either basic or complex.  Basic expressions of Hoon are fundamental, meaning that they can’t be broken down into smaller expressions.  Complex expressions are made up of smaller expressions (which are called **subexpressions**).
 
 The Urbit operating system hews to a conceptual model wherein each expression takes place in a certain context (the _subject_).  While sharing a lot of practicality with other programming paradigms and platforms, Urbit's model is mathematically well-defined and unambiguously specified.  Every expression of Hoon is evaluated relative to its subject, a piece of data that represents the environment, or the context, of an expression.
