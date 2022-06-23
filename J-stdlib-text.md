@@ -15,10 +15,7 @@ objectives:
 
 #   Text Processing I
 
-_We don't deal with formatted text (`tank`s) or parsers here, deferring that discussion.  Formatted text and text parsing are covered [in a later module](./O-stdlib-io.md)._
-
-This module will discuss how text is represented in Hoon, discuss tools for producing and manipulating text, and introduce the `%say` generator, a new generator type.
-
+_This module will discuss how text is represented in Hoon, discuss tools for producing and manipulating text, and introduce the `%say` generator, a new generator type.  We don't deal with formatted text (`tank`s) or parsers here, deferring that discussion.  Formatted text and text parsing are covered [in a later module](./O-stdlib-io.md)._
 
 ##  Text in Hoon
 

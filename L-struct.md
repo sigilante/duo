@@ -9,7 +9,8 @@ objectives:
 
 #   Data Structures
 
-This lesson will introduce you to several useful data structures built on the door, then discuss how the compiler handles types and the sample.
+_This module will introduce you to several useful data structures built on the door, then discuss how the compiler handles types and the sample._
+
 
 ##  Key Data Structures and Molds
 

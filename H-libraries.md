@@ -14,6 +14,8 @@ objectives:
 
 #   Libraries
 
+_Libraries allow you to import and share processing code.  This module will discuss how libraries can be produced, imported, and used._
+
 ##  Importing a Library
 
 If you have only built generators, you will soon or later become frustrated with the apparent requirement that you manually reproduce helper cores and arms every time you need them in a different generator.  Libraries are cores stored in `/lib` which provide access to arms and legs (operations and data).  While the Hoon standard library is directly available in the regular subject, many other elements of functionality have been introduced by software authors.

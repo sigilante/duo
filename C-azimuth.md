@@ -14,7 +14,7 @@ objectives:
 
 #   The Structure of Azimuth
 
-_This lesson introduces how Urbit ID is structured and provides practice in converting and working with `@p` identity points.  It may be considered optional and skipped if you are speedrunning Hoon School._
+_This module introduces how Urbit ID is structured and provides practice in converting and working with `@p` identity points.  It may be considered optional and skipped if you are speedrunning Hoon School._
 
 ##  A Public-Key Infrastructure
 

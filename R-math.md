@@ -14,7 +14,7 @@ objectives:
 
 #   Mathematics
 
-_This lesson introduces how non-`@ud` mathematics are instrumented in Hoon.  It may be considered optional and skipped if you are speedrunning Hoon School._
+_This module introduces how non-`@ud` mathematics are instrumented in Hoon.  It may be considered optional and skipped if you are speedrunning Hoon School._
 
 All of the math we've done until this point relied on unsigned integers:  there was no negative value possible, and there were no numbers with a fractional part.  How can we work with mathematics that require more than just bare unsigned integers?
 

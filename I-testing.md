@@ -1,13 +1,15 @@
 ---
-title: Gates
-nodes: 170, 190, 192
+title: Building Code Confidently
+nodes: 170, 190
 objectives:
-  - "Explain what an Urbit ship is."
-  - "Distinguish a fakeship from a liveship."
-  - "Pronounce ASCII characters per standard Hoon developer practice."
+  - "Run existing unit tests."
+  - "Produce a unit test."
+  - "Employ a debugging strategy to identify and correct errors in Hoon code."
 ---
 
 #   Building Code Confidently
+
+_This module will discuss how we can have confidence that a program does what it claims to do, using unit testing and debugging strategies._
 
 > Code courageously.
 >

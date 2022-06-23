@@ -13,7 +13,7 @@ objectives:
 
 #   Adaptive Cores
 
-_This lesson introduces how cores can be extended for different behavioral patterns.  It may be considered optional and skipped if you are speedrunning Hoon School._
+_This module introduces how cores can be extended for different behavioral patterns.  It may be considered optional and skipped if you are speedrunning Hoon School._
 
 Cores can expose and operate with many different assumptions about their inputs and structure.  `[battery payload]` describes the top-level structure of a core, but within that we already know other requirements can be enforced, like `[battery [sample context]]` for a gate, or no `sample` for a trap.  Cores can also expose and operate on their input values with different relationships.  This lesson is concerned with examining [_genericity_](https://en.wikipedia.org/wiki/Generic_programming) including certain kinds of [parametric polymorphism](https://en.wikipedia.org/wiki/Parametric_polymorphism), which allows flexibility in type, and [_variance_](https://en.wikipedia.org/wiki/Covariance_and_contravariance_%28computer_science%29), which allows cores to use different sets of rules as they evaluate.
 

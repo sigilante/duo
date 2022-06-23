@@ -14,6 +14,8 @@ objectives:
 
 #    Gates (Functions)
 
+_This module will teach you how to produce deferred computations for later use, like functions in other languages._
+
 ##  A Spoonful of Sugar
 
 Until this point in Hoon School, we have rigorously adhered to the regular syntax of runes so that you could get used to using them.  In fact, the only two irregular forms we used were these:

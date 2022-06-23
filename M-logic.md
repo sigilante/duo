@@ -9,7 +9,7 @@ objectives:
 
 #   Conditional Logic
 
-Although you've been using various of the `?` wut runes for a while now, let's wrap up some loose ends.  This module will cover the nature of loobean logic and the rest of the `?` wut runes.
+_Although you've been using various of the `?` wut runes for a while now, let's wrap up some loose ends.  This module will cover the nature of loobean logic and the rest of the `?` wut runes._
 
 
 ##  Loobean Logic

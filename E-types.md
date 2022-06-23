@@ -12,6 +12,8 @@ objectives:
 
 #   Molds (Types)
 
+_This module will introduce the Hoon type system and illustrate how type checking and type inference work._
+
 ##  The Hoon Type System
 
 Programming languages use data types to distinguish different kinds of data and associated rules.  For instance, what does it mean to add 3 to the letter A?  Depending on your programming language, you could see `A3`, `D`, or an error.

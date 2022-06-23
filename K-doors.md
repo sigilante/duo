@@ -10,11 +10,7 @@ objectives:
 
 #   Cores and Doors
 
-Hoon is statically typed, which means (among other things) that auras are subject to strict nesting rules, molds are crash-only, and the whole thing is rather cantankerous about matching types.
-
-However, since gate-building arms are possible, Hoon developers frequently employ them as templates to build type-appropriate cores, including gates.
-
-This lesson will start by introducing the concept of gate-building gates; then it will expand our notion of cores to include doors; finally it will introduce a common door, the `++map`, to illustrate how doors work.
+_Hoon is statically typed, which means (among other things) that auras are subject to strict nesting rules, molds are crash-only, and the whole thing is rather cantankerous about matching types.  However, since gate-building arms are possible, Hoon developers frequently employ them as templates to build type-appropriate cores, including gates.  This lesson will start by introducing the concept of gate-building gates; then it will expand our notion of cores to include doors; finally it will introduce a common door, the `++map`, to illustrate how doors work._
 
 ##  Gate-Building Gates
 

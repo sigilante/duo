@@ -18,6 +18,8 @@ objectives:
 
 #   Trees, Addressing, and Lists
 
+_Every noun in Urbit is an atom or a cell.  This module will elaborate how we can use this fact to locate data and evaluate code in a given expression.  It will also discuss the important `list` mold builder and a number of standard library operations._
+
 ##  Trees
 
 Every noun in Urbit is a either an atom or a cell.  Since a cell has only two elements, a head and a tail, we can derive that everything is representable as a [_binary tree_](https://en.wikipedia.org/wiki/Binary_tree).  We can draw this layout naturally:

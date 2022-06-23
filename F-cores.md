@@ -13,6 +13,8 @@ objectives:
 
 #   Cores
 
+_This module will introduce the key Hoon data structure known as the **core**, as well as ramifications._
+
 The Hoon subject is a noun.  One way to look at this noun is to denote each fragment of is as either a computation or data.  By strictly separating these two kinds of things, we derive the data structure known within Hoon as a _core_.
 
 Cores are the most important data structure in Hoon.  They allow you to solve many coding problems by identifying a pattern and supplying a proper data structure apt to the challenge.  You have already started using cores with `|=` bartis gate construction and use.

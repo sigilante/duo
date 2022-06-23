@@ -13,6 +13,8 @@ objectives:
 
 #   Functional Programming
 
+_This module will discuss some gates-that-work-on-gates and other assorted operators that are commonly recognized as functional programming tools._
+
 Given a gate, you can manipulate it to accept a different number of values than its sample formally requires, or otherwise modify its behavior.  These techniques mirror some of the common tasks used in other [functional programming languages](https://en.wikipedia.org/wiki/Functional_programming) like Haskell, Clojure, and OCaml.
 
 Functional programming, as a paradigm, tends to prefer rather mathematical expressions with explicit modification of function behavior.  It works as a formal system of symbolic expressions manipulated according to given rules and properties.  FP was derived from the [lambda calculus](https://en.wikipedia.org/wiki/Lambda_calculus), a cousin of combinator calculi like Nock.  (See also [APL](https://en.wikipedia.org/wiki/APL_%28programming_language%29).)

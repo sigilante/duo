@@ -13,6 +13,8 @@ objectives:
 
 #   Hoon Syntax
 
+_This module will discuss the fundamental data concepts of Hoon and how programs effect control flow._
+
 The study of Hoon can be divided into two parts: syntax and semantics.
 
 1. The **syntax** of a programming language is the set of rules that determine what counts as admissible code in that language. It determines which characters may be used in the source, and also how these characters may be assembled to constitute a program. Attempting to run a program that doesn’t follow these rules will result in a syntax error.
