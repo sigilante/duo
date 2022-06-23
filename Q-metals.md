@@ -15,7 +15,7 @@ objectives:
 
 _This lesson introduces how cores can be extended for different behavioral patterns.  It may be considered optional and skipped if you are speedrunning Hoon School._
 
-Cores can expose and operate with many different assumptions about their inputs and structure.  `[battery payload]` describes the top-level structure of a core, but within that we already know other requirements can be enforced, like `[battery [sample context]]` for a gate, or no `sample` for a trap.  Cores can also expose and operate on their input values with different relationships.  This lesson is concerned with examining _polymorphism_, which allows flexibility in type, and _variance_, which allows cores to use different sets of rules as they evaluate.
+Cores can expose and operate with many different assumptions about their inputs and structure.  `[battery payload]` describes the top-level structure of a core, but within that we already know other requirements can be enforced, like `[battery [sample context]]` for a gate, or no `sample` for a trap.  Cores can also expose and operate on their input values with different relationships.  This lesson is concerned with examining [_genericity_](https://en.wikipedia.org/wiki/Generic_programming) including certain kinds of [parametric polymorphism](https://en.wikipedia.org/wiki/Parametric_polymorphism), which allows flexibility in type, and [_variance_](https://en.wikipedia.org/wiki/Covariance_and_contravariance_%28computer_science%29), which allows cores to use different sets of rules as they evaluate.
 
 If cores never changed, we wouldn't need polymorphism.  Of course, nouns are immutable and never change, but we use them as templates to construct new nouns around.
 
@@ -99,7 +99,7 @@ The [trapezoid rule](https://en.wikipedia.org/wiki/Trapezoidal_rule) solves a de
 
 The meat of this gate is concerned with correctly implementing the mathematical equation.  In particular, wetness is required because `b` can be _any_ gate (although it should only be a gate with one argument, lest the whole thing `mull-grow` fail).  If you attempt to create the equivalent dry gate (`|=` bartis), Hoon fails to build it with a `nest-fail` due to the loss of type information from the gate `b`.
 
-#### Exercise:  `++need`
+#### Tutorial:  `++need`
 
 Wet gates and wet cores are used in Hoon when type information isn't well-characterized ahead of time, as when constructing `++map`s or `++set`s.  For instance, almost all of the arms in `++by` and `++in`, as well as most `++list` tools, are wet gates.
 
@@ -114,18 +114,63 @@ Let's take a look at a particular wet gate from the Hoon standard library, [`++n
 
 Line by line:
 
-1. `|*  a=(unit)` declares a wet gate which accepts a `unit`.
+```hoon
+|*  a=(unit)
+```
 
-2. `?~  a  ~<(%mean.'need' !!)`.  If `a` is empty, `~`, then the `unit` cannot be unwrapped.  Crash with [`!!` zapzap](https://urbit.org/docs/hoon/reference/rune/zap#-zapzap), but use [`~<` siggal](https://urbit.org/docs/hoon/reference/rune/sig#-siggal) to hint to the runtime interpreter how to handle the crash.
+This declares a wet gate which accepts a `unit`.
 
-3. `u.a` returns the value in the `unit` since we now know it exists.
+```hoon
+?~  a  ~<(%mean.'need' !!)
+```
+
+If `a` is empty, `~`, then the `unit` cannot be unwrapped.  Crash with [`!!` zapzap](https://urbit.org/docs/hoon/reference/rune/zap#-zapzap), but use [`~<` siggal](https://urbit.org/docs/hoon/reference/rune/sig#-siggal) to hint to the runtime interpreter how to handle the crash.
+
+```hoon
+u.a
+```
+
+This returns the value in the `unit` since we now know it exists.
 
 `++need` is wet because we don't want to lose type information when we extract from the `unit`.
 
 ### Parametric Polymorphism
 
-TODO
-https://urbit.org/docs/hoon/hoon-school/type-polymorphism
+We encountered `|$` barbuc above as a wet gate that is a mold builder rune which takes in a list of molds and produces a new mold.  Here we take another look at this rune as an implementation of _parametric polymorphism_ in Hoon.
+
+For example, we have `list`s, `tree`s, and `set`s in Hoon, which are each defined in `hoon.hoon` as wet gate mold builders. Take a moment to see for yourself. Each `++` arm is followed by `|$` and a list of labels for input types inside brackets `[ ]`. After that subexpression comes another that defines a type that is parametrically polymorphic with respect to the input values. For example, here is the definition of `list` from `hoon.hoon`:
+
+```hoon
+++  list
+  |$  [item]
+  ::    null-terminated list
+  ::
+  ::  mold generator: produces a mold of a null-terminated list of the
+  ::  homogeneous type {a}.
+  ::
+  $@(~ [i=item t=(list item)])
+```
+
+The `|$` barbuc rune is especially useful for defining containers of various kinds.  Indeed, `list`s, `tree`s, and `set`s are all examples of containers that accept subtypes.  You can have a `(list @)`, a `(list ^)`, a `(list *)`, a `(tree @)`, a `(tree ^)`, a `(tree *)`, etc.  The same holds for `set`.
+
+One nice thing about containers defined by `|$` is that they nest in the expected way.  Intuitively a `(list @)` should nest under `(list *)`, because `@` nests under `*`. And so it does:
+
+```hoon
+> =a `(list @)`~[11 22 33]
+
+> ^-((list *) a)
+~[11 22 33]
+```
+
+Conversely, a `(list *)` should not nest under `(list @)`, because `*` does not nest under `@`:
+
+```hoon
+> =b `(list *)`~[11 22 33]
+
+> ^-((list @) b)
+nest-fail
+```
+
 
 ##  Variadicity
 
@@ -227,90 +272,253 @@ A `%gold` core `g` has a read-write payload; another core `h` that nests within 
 
 By default, cores are `%gold` invariant cores.
 
-### Examples
 
-#### Example:  `%iron` Contravariant Polymorphism
+### Illustrations
 
-TODO this whole example may need to be chucked or reworked, it's substantially confusing
+#### Tutorial:  `%gold` Invariant Polymorphism
 
-Let's take a look at a [gate](https://urbit.org/docs/glossary/gate/) from the Hoon standard library as an example; we'll be passing a few different types in. The code below is an excerpt from `hoon.hoon` and, as such, will not run as-is by itself.  TODO
+Usually it makes sense to cast for a `%gold` core type when you're treating a core as a state machine.  The check ensures that the payload, which includes the relevant state, doesn't vary in type.
 
-`++fold` is a _wet_ gate that takes two arguments and produces a _dry_ gate.
-
-```hoon
-++  fold  
-   |*  [state=mold elem=mold]
-   |=  [[st=state xs=(list elem)] f=$-([state elem] state)]
-   ^-  state
-   |-
-   ?~  xs  st
-   $(xs t.xs, st (f st i.xs))
-```
-
-On the first line of the [arm](https://urbit.org/docs/glossary/arm/), we use `|*` to create a wet gate, with two arguments: `state` and `elem`. These arguments are both `mold`s; that is to say, they are type definitions. We use this to define the types used in the dry gate.
+Let's look at simpler examples here, using the `^+` ketlus rune:
 
 ```hoon
-|=  [[st=state xs=(list elem)] f=$-([state elem] state)]
+> ^+(|=(^ 15) |=(^ 16))
+< 1.jcu
+  [ [* *]
+    [our=@p now=@da eny=@uvJ]
+    <17.bny 33.ehb 14.dyd 53.vlb 77.lrt 232.oiq 51.qbt 123.zao 46.hgz 1.pnw %140>
+  ]
+>
+
+> ^+(|=(^ 15) |=([@ @] 16))
+mint-nice
+-need.@
+-have.*
+nest-fail
+
+> ^+(|=(^ 15) |=(* 16))
+mint-nice
+-need.[* *]
+-have.*
+nest-fail
 ```
 
-Here we begin to define our dry gate. The first thing the dry gate takes is a cell, `[st=state xs=(list elem)]`. `state` is the type we passed in first to our wet gate, and will be the type that is produced by the dry gate. `st` is a value of type `state` that will be used as an accumulator, and will be the final value returned when the dry gate is called.
+The first cast goes through because the right-hand gold core has the same sample type as the left-hand gold core. The sample types mutually nest. The second cast fails because the right-hand sample type is more specific than the left-hand sample type. (Not all cells, `^`, are pairs of atoms, `[@ @]`.) And the third cast fails because the right-hand sample type is broader than the left-hand sample type. (Not all nouns, `*`, are cells, `^`.)
 
-The second argument is `f=$-([state elem] state)`. `$-` is a rune that takes two type arguments, `[state elem]` and `state` in this case, and produces a `mold` of a gate that maps from the first type operand to the second. This will match a gate we provide `fold` for how to map from both the `state`.
+Two more examples:
 
-The rest of the dry gate is straightforward:
+```
+> ^+(=>([1 2] |=(@ 15)) =>([123 456] |=(@ 16)))
+<1.xqz {@ @ud @ud}>
+
+> ^+(=>([1 2] |=(@ 15)) =>([123 456 789] |=(@ 16)))
+nest-fail
+```
+
+In these examples, the `=>` rune is used to give each core a simple context. The context of the left-hand core in each case is a pair of atoms, `[@ @]`. The first cast goes through because the right-hand core also has a pair of atoms as its context. The second cast fails because the right-hand core has the wrong type of context -- three atoms, `[@ @ @]`.
+
+#### Tutorial:  `%iron` Contravariant Polymorphism
+
+`%iron` gates are particularly useful when you want to pass gates (having various payload types) to other gates.  We can illustrate this use with a very simple example. Save the following as `/gen/gatepass.hoon` in your `%base` desk:
 
 ```hoon
-   ^-  state
-   |-
-   ?~  xs  st
-   $(xs t.xs, st (f st i.xs))
+|=  a=_^|(|=(@ 15))
+^-  @
+=/  b=@  (a 10)
+(add b 20)
 ```
 
-We ensure the output is of type `state`. Then we check if `xs`, the list, is empty. If it is, we return `st`. Otherwise, we call `f` on `i.xs`, the head of the list, and set `xs` to be the tail of the list and repeat.
-
-Lets look at two examples of using `fold`.
+This generator is rather simple except for the first line.  The sample is defined as an `%iron` gate and gives it the face `a`.  The function as a whole is for taking some gate as input, calling it by passing it the value `10`, adding `20` to it, and returning the result.  Let's try it out in the Dojo:
 
 ```hoon
-%+  (fold (list @) @)
- :-  ~
- ~[1 2 3 4]
-|=  [s=(list @) e=@]
-:_  s
-(add 2 e)
+> +gatepass |=(a=@ +(a))
+31
+
+> +gatepass |=(a=@ (add 3 a))
+33
+
+> +gatepass |=(a=@ (mul 3 a))
+50
 ```
 
-Here we have a call to `fold` that we can see will produce a `(list @)` from a list of `@`. The first argument is a cell of `~` and `~[1 2 3 4]`.
-
-The gate will simply add two to each element `e` and append that to the front of `s`. Let's run this in the `dojo`:
+But we still haven't fully explained the first line of the code.  What does `_^|(|=(@ 15))` mean? The inside portion is clear enough:  `|=(@ 15)` produces a normal (i.e., `%gold`) gate that takes an atom and returns `15`.  The [`^|` ketbar](https://urbit.org/docs/hoon/reference/rune/ket#-ketbar) rune is used to turn `%gold` gates to `%iron`.  (Reverse alchemy!)  And the `_` character turns that `%iron` gate value into a structure, i.e. a type.  So the whole subexpression means, roughly:  “the same type as an iron gate whose sample is an atom, `@`, and whose product is another atom, `@`”.  The context isn't checked at all.  This is good, because that allows us to accept gates defined and produced in drastically different environments.  Let's try passing a gate with a different context:
 
 ```hoon
-> %+  (fold (list @) @)
-   :-  ~
-   ~[1 2 3 4]
-  |=  [s=(list @) e=@]
-  :_  s
-  (add 2 e)
-~[6 5 4 3]
-
-~zod:dojo>
+> +gatepass =>([22 33] |=(a=@ +(a)))
+31
 ```
 
-The list is in reverse order simply because it's easier to add to the front of a list than the end. If you needed it in the same order, you could just `flop` it.
+It still works.  You can't do that with a gold core sample!
 
-But `fold` does not have to produce a `list`. Let's look at another example:
+There's a simpler way to define an iron sample. Revise the first line of `/gen/gatepass.hoon` to the following:
 
 ```hoon
-%+  (fold @ @)
-  [0 ~[1 2 3 4]]
-|=  [s=@ e=@]
-(add e s)
+|=  a=$-(@ @)
+^-  @
+=/  b=@  (a 10)
+(add b 20)
 ```
 
-Here `fold` will produce a gate that takes an `atom` and applies a gate to a `list` of `atoms`. The difference here is that this call will produce a sum of the elements of the list, rather than the list itself.
+If you test it, you'll find that the generator behaves the same as it did before the edits.  The [`$-` buchep](https://urbit.org/docs/hoon/reference/rune/buc#--buchep) rune is used to create an `%iron` gate structure, i.e., an `%iron` gate type.  The first expression defines the desired sample type, and the second subexpression defines the gate's desired output type.
 
-The key takeaway from both of these examples is that the gates provided are _`%iron`-polymorphic_ with respect to the definition of the type in `fold`.  They are iron polymorphic because samples `s` and `e` nest under the types `state` and `elem`.  In the second case, that's because when we provided those to `++fold`, it was was stated they were `@` and `@`.  In the first case, we stated that `state` was `(list @)` and `elem` was `@`. In both cases, the sample of each gate nest inside the types defined when we called the wet gate `fold`.
+The sample type of an `%iron` gate is contravariant.  This means that, when doing a cast with some `%iron` gate, the desired gate must have either the same sample type or a superset.
 
-#### Example:  `%lead` Bivariant Polymorphism
+Why is this a useful nesting rule for passing gates?  Let's say you're writing a function `F` that takes as input some gate `G`.  Let's also say you want `G` to be able to take as input any **mammal**.  The code of `F` is going to pass arbitrary **mammals** to `G`, so that `G` needs to know how to handle all **mammals** correctly.  You can't pass `F` a gate that only takes **dogs** as input, because `F` might call it with a **cat**.  But `F` can accept a gate that takes all **animals** as input, because a gate that can handle any **animal** can handle **any mammal**.
+
+`%iron` cores are designed precisely with this purpose in mind.  The reason that the sample is write-only is that we want to be able to assume, within function `F`, that the sample of `G` is a **mammal**.  But that might not be true when `G` is first passed into `F`—the default value of `G` could be another **animal**, say, a **lizard**.  So we restrict looking into the sample of `G` by making the sample write-only.  The illusion is maintained and type safety secured.
+
+Let's illustrate `%iron` core nesting properties:
+
+```hoon
+> ^+(^|(|=(^ 15)) |=(^ 16))
+< 1|jcu
+  [ [* *]
+    [our=@p now=@da eny=@uvJ]
+    <17.bny 33.ehb 14.dyd 53.vlb 77.lrt 232.oiq 51.qbt 123.zao 46.hgz 1.pnw %140>
+  ]
+>
+
+> ^+(^|(|=(^ 15)) |=([@ @] 16))
+mint-nice
+-need.@
+-have.*
+nest-fail
+
+> ^+(^|(|=(^ 15)) |=(* 16))
+< 1|jcu
+  [ [* *]
+    [our=@p now=@da eny=@uvJ]
+    <17.bny 33.ehb 14.dyd 53.vlb 77.lrt 232.oiq 51.qbt 123.zao 46.hgz 1.pnw %140>
+  ]
+>
+```
+
+(As before, we use the `^|` ketbar rune to turn `%gold` gates to `%iron`.)
+
+The first cast goes through because the two gates have the same sample type.  The second cast fails because the right-hand gate has a more specific sample type than the left-hand gate does.  If you're casting for a gate that accepts any cell, `^`, it's because we want to be able to pass any cell to it.  A gate that is only designed for pairs of atoms, `[@ @]`, can't handle all such cases, naturally.  The third cast goes through because the right-hand gate sample type is broader than the left-hand gate sample type.  A gate that can take any noun as its sample, `*`, works just fine if we choose only to pass it cells, `^`.
+
+We mentioned previously that an `%iron` core has a write-only sample and an opaque context.  Let's prove it.
+
+Let's define a trivial gate with a context of `[g=22 h=44 .]`, convert it to `%iron` with `^|`, and bind it to `iron-gate` in the dojo:
+
+```hoon
+> =iron-gate ^|  =>([g=22 h=44 .] |=(a=@ (add a g)))
+
+> (iron-gate 10)
+32
+
+> (iron-gate 11)
+33
+```
+
+Not a complicated function, but it serves our purposes.  Normally (i.e., with `%gold` cores) we can look at a context value `p` of some gate `q` with a wing expression: `p.q`. Not so with the iron gate:
+
+```hoon
+> g.iron-gate
+-find.g.iron-gate
+```
+
+And usually we can look at the sample value using the face given in the gate definition. Not in this case:
+
+```hoon
+> a.iron-gate
+-find.a.iron-gate
+```
+
+If you really want to look at the sample you can check `+6` of `iron-gate`:
+
+```hoon
+> +6.iron-gate
+0
+```
+
+… and if you really want to look at the head of the context (i.e., where `g` is located, `+14`) you can:
+
+```hoon
+> +14.iron-gate
+22
+```
+
+… but in both cases all the relevant type information has been thrown away:
+
+```hoon
+> -:!>(+6.iron-gate)
+#t/*
+
+> -:!>(+14.iron-gate)
+#t/*
+```
+
+#### Tutorial:  `%zinc` Covariant Polymorphism
+
+As with `%iron` cores, the context of `%zinc` cores is opaque—they cannot be written-to or read-from.  The sample of a `%zinc` core is read-only.  That means, among other things, that `%zinc` cores cannot be used for function calls.  Function calls in Hoon involve a change to the sample (the default sample is replaced with the argument value), which is disallowed as type-unsafe for `%zinc` cores.
+
+We can illustrate the casting properties of `%zinc` cores with a few examples.  The [`^&` ketpam](https://urbit.org/docs/hoon/reference/rune/ket#-ketpam) rune is used to convert `%gold` cores to `%zinc`:
+
+```hoon
+> ^+(^&(|=(^ 15)) |=(^ 16))
+< 1&jcu
+  [ [* *]
+    [our=@p now=@da eny=@uvJ]
+    <17.bny 33.ehb 14.dyd 53.vlb 77.lrt 232.oiq 51.qbt 123.zao 46.hgz 1.pnw %140>
+  ]
+>
+
+> ^+(^&(|=(^ 15)) |=([@ @] 16))
+< 1&jcu
+  [ [* *]
+    [our=@p now=@da eny=@uvJ]
+    <17.bny 33.ehb 14.dyd 53.vlb 77.lrt 232.oiq 51.qbt 123.zao 46.hgz 1.pnw %140>
+  ]
+>
+
+> ^+(^&(|=(^ 15)) |=(* 16))
+mint-nice
+-need.[* *]
+-have.*
+nest-fail
+```
+
+The first two casts succeed because the right-hand core sample type is either the same or a subset of the left-hand core sample type.  The last one fails because the right-hand sample type is a superset.
+
+Even though you can't function call a `%zinc` core, the arms of a `%zinc` core can be computed and the sample can be read.  Let's test this with a `%zinc` gate of our own:
+
+```hoon
+> =zinc-gate ^&  |=(a=_22 (add 10 a))
+
+> (zinc-gate 12)
+payload-block
+
+> a.zinc-gate
+22
+
+> $.zinc-gate
+32
+```
+
+#### Tutorial:  `%lead` Bivariant Polymorphism
+
+`%lead` cores have more permissive nesting rules than either `%iron` or `%zinc` cores.  There is no restriction on which payload types nest.  That means, among other things, that the payload type of a `%lead` core is both covariant and contravariant ( ‘bivariant’).
+
+In order to preserve type safety when working with `%lead` cores, a severe restriction is needed.  The whole payload of a `%lead` core is opaque—the payload can neither be written-to or read-from.  For this reason, as was the case with `%zinc` cores, `%lead` cores cannot be called as functions.
+
+The arms of a `%lead` core can still be evaluated, however. We can use the `^?` rune to convert a `%gold`, `%iron`, or `%zinc` core to lead:
+
+```hoon
+> =lead-gate ^?  |=(a=_22 (add 10 a))
+
+> $.lead-gate
+32
+```
+
+But don't try to read the sample:
+
+```hoon
+> a.lead-gate
+-find.a.lead-gate
+```
+
+#### Tutorial:  `%lead` Bivariant Polymorphism
 
 - Calculate the Fibonacci series using `%lead` and `%iron` cores.
 
@@ -476,5 +684,7 @@ Finally, the first line of our program will take the first 10 elements of `fib` 
 ```
 
 This example is a bit overkill for simply calculating the Fibonacci series, but it illustrates how you could use `%lead` cores.  Instead of `++fib`, you can supply any infinite sequence and `++stream` will correctly handle it.
+
+#### Exercise:  `%lead` Bivariant Polymorphism
 
 - Produce a `%say` generator that yields another self-referential sequence, like the [Lucas numbers](https://en.wikipedia.org/wiki/Lucas_number) or the [Thue–Morse sequence](https://en.wikipedia.org/wiki/Thue%E2%80%93Morse_sequence).

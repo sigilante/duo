@@ -1,3 +1,5 @@
+_This file is a catch-all and won't be in the release._
+
 ### Other Functions in the Hoon Standard Library
 
 Let's look once more at the parent core of the `add` arm in the Hoon standard library:

@@ -1,6 +1,6 @@
 ---
 title: Gates
-nodes: 185, TODO
+nodes: 185
 objectives:
   - "Identify tanks, tangs, wains, walls, and similar formatted printing data structures."
   - "Interpret logging message structures (`%leaf`, `$rose`, `$palm`)."
@@ -12,60 +12,52 @@ objectives:
 
 _This module will elaborate on text representation in Hoon, including formatted text, `%ask` generators, and text parsing.  It may be considered optional and skipped if you are speedrunning Hoon School._
 
--   [4b: text processing](https://urbit.org/docs/hoon/reference/stdlib#4b-text-processing)
-  -   [`++cass`](https://urbit.org/docs/hoon/reference/stdlib/4b/#cass "To lowercase") [`++crip`](https://urbit.org/docs/hoon/reference/stdlib/4b/#crip "Tape to cord") [`++cuss`](https://urbit.org/docs/hoon/reference/stdlib/4b/#cuss "To uppercase") [`++mesc`](https://urbit.org/docs/hoon/reference/stdlib/4b/#mesc "Escape special characters") [`++runt`](https://urbit.org/docs/hoon/reference/stdlib/4b/#runt "Prepend n times") [`++sand`](https://urbit.org/docs/hoon/reference/stdlib/4b/#sand "Softcast by aura") [`++sane`](https://urbit.org/docs/hoon/reference/stdlib/4b/#sane "Check aura validity") [`++teff`](https://urbit.org/docs/hoon/reference/stdlib/4b/#teff "UTF8 length") [`++trim`](https://urbit.org/docs/hoon/reference/stdlib/4b/#trim "Tape split") [`++trip`](https://urbit.org/docs/hoon/reference/stdlib/4b/#trip "Cord to tape") [`++tuba`](https://urbit.org/docs/hoon/reference/stdlib/4b/#tuba "UTF8 to UTF32 tape") [`++tufa`](https://urbit.org/docs/hoon/reference/stdlib/4b/#tufa "UTF32 to UTF8 tape") [`++tuft`](https://urbit.org/docs/hoon/reference/stdlib/4b/#tuft "UTF32 to UTF8 text") [`++taft`](https://urbit.org/docs/hoon/reference/stdlib/4b/#taft "UTF8 to UTF32 cord") [`++wack`](https://urbit.org/docs/hoon/reference/stdlib/4b/#wack "Knot escape") [`++wick`](https://urbit.org/docs/hoon/reference/stdlib/4b/#wick "Knot unescape") [`++woad`](https://urbit.org/docs/hoon/reference/stdlib/4b/#woad "Unescape cord") [`++wood`](https://urbit.org/docs/hoon/reference/stdlib/4b/#wood "Escape cord")
--   [4m: parsing (formatting functions)](https://urbit.org/docs/hoon/reference/stdlib#4m-parsing-formatting-functions)
-  -   [`++scot`](https://urbit.org/docs/hoon/reference/stdlib/4m/#scot "Render dime as cord") [`++scow`](https://urbit.org/docs/hoon/reference/stdlib/4m/#scow "Render dime as tape") [`++slat`](https://urbit.org/docs/hoon/reference/stdlib/4m/#slat "Curried slaw") [`++slav`](https://urbit.org/docs/hoon/reference/stdlib/4m/#slav "Demand: parse cord with input aura") [`++slaw`](https://urbit.org/docs/hoon/reference/stdlib/4m/#slaw "Parse cord to input aura") [`++slay`](https://urbit.org/docs/hoon/reference/stdlib/4m/#slay "Parse cord to coin") [`++smyt`](https://urbit.org/docs/hoon/reference/stdlib/4m/#smyt "Render path as tank") [`++spat`](https://urbit.org/docs/hoon/reference/stdlib/4m/#spat "Render path as cord") [`++spud`](https://urbit.org/docs/hoon/reference/stdlib/4m/#spud "Render path as tape") [`++stab`](https://urbit.org/docs/hoon/reference/stdlib/4m/#stab "Parse cord to path") [`++stap`](https://urbit.org/docs/hoon/reference/stdlib/4m/#stap "Path parser")
 
-Let's examine some specific implementations:
+##  Text Conversions
 
-How do we convert text into all upper-case?
-- [`++cass`](https://urbit.org/docs/hoon/reference/stdlib/4b#cass)
+We frequently need to convert from text to data, and between different text-based representations.  Let's examine some specific arms:
 
-How do we turn a `cord` into a `tape`?
-- [`++trip`](https://urbit.org/docs/hoon/reference/stdlib/4b#trip)
+- How do we convert text into all upper-case?
+    - [`++cass`](https://urbit.org/docs/hoon/reference/stdlib/4b#cass)
 
-How can we make a list of a null-terminated tuple?
-- [`++le:nl`](https://urbit.org/docs/hoon/reference/stdlib/2m#lenl)
+- How do we turn a `cord` into a `tape`?
+    - [`++trip`](https://urbit.org/docs/hoon/reference/stdlib/4b#trip)
 
-How can we evaluate Nock expressions?
-- [`++mink`](https://urbit.org/docs/hoon/reference/stdlib/4n#mink)
+- How can we make a list of a null-terminated tuple?
+    - [`++le:nl`](https://urbit.org/docs/hoon/reference/stdlib/2m#lenl)
 
-(If you see a `|*` bartar rune in there, it's similar to a `|=` bartis, but what's called a _wet gate_.)
+- How can we evaluate Nock expressions?
+    - [`++mink`](https://urbit.org/docs/hoon/reference/stdlib/4n#mink)
 
-### `zuse.hoon`
+(If you see a `|*` bartar rune in the code, it's similar to a `|=` bartis, but produces what's called a [_wet gate_](./Q-metals.md).)
 
-When you open `zuse.hoon`, you'll see that it is composed with some data structures from `%lull`, but that by and large it consists of a core including arms organized into “engines”.
+The `++html` core of the standard libary contains some additional important tools for working with web-based data, such as [MIME types](https://en.wikipedia.org/wiki/Media_type) and [JSON strings](https://en.wikipedia.org/wiki/JSON).
 
-Most of these are internal Arvo conventions, such as conversion between Unix-epoch times and Urbit-epoch times.  The main one you are likely to work with is the `++html` core, which contains important tools for working with web-based data, such as [MIME types](https://en.wikipedia.org/wiki/Media_type) and [JSON strings](https://en.wikipedia.org/wiki/JSON).
+- To convert a `@ux` hexadecimal value to a `cord`:
 
-To convert a `@ux` hexadecimal value to a `cord`:
+    ```hoon
+    > (en:base16:mimes:html [3 0x12.3456])  
+    '123456'
+    ```
 
-```hoon
-> (en:base16:mimes:html [3 0x12.3456])  
-'123456'
-```
+- To convert a `cord` to a `@ux` hexadecimal value:
 
-To convert a `cord` to a `@ux` hexadecimal value:
+    ```hoon
+    > `@ux`q.+>:(de:base16:mimes:html '123456')
+    0x12.3456
+    ```
 
-```hoon
-> `@ux`q.+>:(de:base16:mimes:html '123456')
-0x12.3456
-```
+- There are tools for working with Bitcoin wallet base-58 values, JSON strings, XML strings, and more.
 
-There are tools for working with Bitcoin wallet base-58 values, JSON strings, XML strings, and more.
-
-```hoon
-> (en-urlt:html "https://hello.me")
-"https%3A%2F%2Fhello.me"
-```
-
-What seems to be missing from the standard library?
+    ```hoon
+    > (en-urlt:html "https://hello.me")
+    "https%3A%2F%2Fhello.me"
+    ```
 
 
 ##  Formatted Text
 
-A `+$tank` is a formatted print tree.  Error messages and the like are built of `tank`s.  `tank`s are defined in `hoon.hoon`:
+Hoon produces messages at the Dojo (or otherwise) using an internal formatted text system, called `tank`s.  A `+$tank` is a formatted print tree.  Error messages and the like are built of `tank`s.  `tank`s are defined in `hoon.hoon`:
 
 ```hoon
 ::  $tank: formatted print tree
@@ -216,25 +208,17 @@ For instance, how does `+cat` work?  Let's look at the structure of `/gen/cat/ho
 ==
 ```
 
-- What is the top-level structure of the generator?  (A cell of `%say` and the gate, previewing `%say` generators. TODO)
-- What don't you recognize?
-  - `/?` faswut pins the expected Arvo kelvin version; right now it doesn't do anything
-  - [`.^` dotket](https://urbit.org/docs/hoon/reference/rune/dot#-dotket) loads a value from Arvo (called a “scry”)
-  - `++smyt` pretty-prints a path
-  - [`=-` tishep](https://urbit.org/docs/hoon/reference/rune/tis#--tishep) combines with the subject, inverted relative to `=+`/`=/`.
-  - There are some `tape` interpolation and `list` construction tools we haven't used yet:
-      
-      ```hoon
-      > [<56>]
-      "56"
-      > [<56>]~
-      ["56" ~]
-      > ~[<56>]
-      ["56" ~]
-      > /[4]  
-      [4 ~]
-      ```
-  - `?-` wuthep we saw up above:  it's a `switch` statement.
+- What is the top-level structure of the generator?  (A cell of `%say` and the gate, previewing `%say` generators.)
+
+- Some points of interest include:
+  - `/?` faswut pins the expected Arvo kelvin version; right now it doesn't do anything.
+  - [`.^` dotket](https://urbit.org/docs/hoon/reference/rune/dot#-dotket) loads a value from Arvo (called a “scry”).
+  - [`++smyt`](https://urbit.org/docs/hoon/reference/stdlib/4m#smyt) pretty-prints a path.
+  - [`=-` tishep](https://urbit.org/docs/hoon/reference/rune/tis#--tishep) combines a faced noun with the subject, inverted relative to `=+` tislus/`=/` tisfas.
+
+You can see how much of the generator is concerned with formatting the content of the file into a formatted text `tank` by prepending `%rose` tags and so forth.
+
+- Work line-by-line through the file and clarify parts that are muddy to you at first glance.
 
 
 ##  `%ask` Generators
@@ -243,14 +227,11 @@ Previously, we introduced the concept of a `%say` generator to produce a more ve
 
 We use an `%ask` generator when we want to create an interactive program that prompts for inputs as it runs, rather than expecting arguments to be passed in at the time of initiation.
 
+This section will briefly walk through an `%ask` generator to give you a taste of how they work.  The [CLI app guide](https://urbit.org/docs/hoon/guides/cli-tutorial) walks through the libraries necessary for working with `%ask` generators in greater detail.  We also recommend reading [~wicdev-wisryt's “Input and Output in Hoon”](https://urbit.org/blog/io-in-hoon) for an extended consideration of relevant input/output issues.
 
+##### Tutorial:  `%ask` Generator
 
-- [Hoon Guide, “CLI apps”](https://urbit.org/docs/hoon/guides/cli-tutorial)
-- [`~wicdev-wisryt`, “Input and Output in Hoon”](https://urbit.org/blog/io-in-hoon)
-
-##### `%ask` example
-TODO
-The code below is an `%ask` generator that checks if the user inputs "blue" when prompted. Save it as `axe.hoon` in the `/gen` directory of your `%base` desk.
+The code below is an `%ask` generator that checks if the user inputs `"blue"` when prompted [per a classic Monty Python scene](https://www.youtube.com/watch?v=L0vlQHxJTp0).  Save it as `/gen/axe.hoon` in your `%base` desk.
 
 ```hoon
 /-  sole
@@ -273,85 +254,90 @@ The code below is an `%ask` generator that checks if the user inputs "blue" wh
 ```
 
 Run the generator from the Dojo:
+
+```hoon
 > +axe
 
 What is your favorite color?
-
 : color:
+```
 
-Something new happened. Instead of simply returning something, your Dojo's prompt changed from `~your-urbit:dojo>` to `~your-urbit:dojo: color:`, and now expects additional input. Let's give it an input:
+Something new has happened.  Instead of simply returning something, your Dojo's prompt changed from `~your-urbit:dojo>` to `~your-urbit:dojo: color:`, and now expects additional input.  Let's give it an answer:
 
+```hoon
 : color: red
-
 Into the Gorge of Eternal Peril with you!
-
 Aaaaagh!
+```
 
 Let's go over what exactly is happening in this code.
 
+```hoon
 /-  sole
-
 /+  generators
-
 =,  [sole generators]
+```
 
-Here we bring in some of the types we are going to need from `/sur/sole` and gates we will use from `/lib/generators`. We use some special runes for this.
+Here we bring in some of the types we are going to need from `/sur/sole` and gates we will use from `/lib/generators`. We use some special runes for this.
 
-`/-` is a Ford rune used to import types from `sur`.
+- `/-` fashep is a Ford rune used to import types from `/sur`.
+- `/+` faslus is a Ford rune used to import libraries from `/lib`.
+- `=,` tiscom is a rune that allows us to expose a namespace. We do this to avoid having to write `sole-result:sole` instead of `sole-result` or `print:generators` instead of `print`.
 
-`/+` is a Ford rune used to import libraries from `lib`.
-
-`=,` is a rune that allows us to expose a namespace. We do this to avoid having to write `sole-result:sole` instead of `sole-result` or `print:generators` instead of `print`.
-
+```hoon
 :-  %ask
-
 |=  *
+```
 
-This code might be familiar. Just as with their `%say` cousins, `%ask` generators need to produce a `cell`, the head of which specifies what kind of generator we are running.
+This code might be familiar. Just as with their `%say` cousins, `%ask` generators need to produce a `cell`, the head of which specifies what kind of generator we are running.
 
-With `|= *`, we create a gate and ignore the standard arguments we are given, because we're not using them.
+With `|= *`, we create a gate and ignore the standard arguments we are given, because we're not using them.
 
+```hoon
 ^-  (sole-result (cask tang))
+```
 
-`%ask` generators need to have the second half of the cell be a gate that produces a `sole-result`, one that in this case contains a `cask` of `tang`. We use the `^-` rune to constrain the generator's output to such a `sole-result`.
+`%ask` generators need to have the second half of the cell be a gate that produces a `sole-result`, one that in this case contains a `cask` of `tang`.  We use the `^-` kethep rune to constrain the generator's output to such a `sole-result`.
 
-A `cask` is a pair of a `mark` name and a noun. Recall that a `mark` can be thought of as an Arvo-level MIME type for data.
+A `cask` is a pair of a `mark` name and a noun.  We previously described a `mark` as a kind of complicated mold; here we add that a `mark` can be thought of as an Arvo-level [MIME](https://en.wikipedia.org/wiki/MIME) type for data.
 
-A `tang` is a `list` of `tank`, and a `tank` is a structure for printing data. There are three types of `tank`: `leaf`, `palm`, and `rose`. A `leaf` is for printing a single noun, a `rose` is for printing rows of data, and a `palm` is for printing backstep-indented lists.
+A `tang` is a `list` of `tank`, and a `tank` is a structure for printing data, as described above.  There are three types of `tank`: `leaf`, `palm`, and `rose`.  A `leaf` is for printing a single noun, a `rose` is for printing rows of data, and a `palm` is for printing backstep-indented lists.
 
+```hoon
 %+  print    leaf+"What is your favorite color?"
-
 %+  prompt   [%& %prompt "color: "]
-
 |=  t=tape
-
 %+  produce  %tang
+```
 
-Because we imported `generators`, we can access its contained gates, three of which we use in `axe.hoon`: `print`, `prompt`, and `produce`.
+Because we imported `generators`, we can access its contained gates, three of which we use in `axe.hoon`: `++print`, `++prompt`, and `++produce`.
 
-**`print`** is used for printing a `tank` to the console.
+- `print` is used for printing a `tank` to the console.
 
-In our example, `%+` is the rune to call a gate, and our gate `print` takes one argument which is a `tank` to print. The `+` here is syntactic sugar for `[%leaf "What is your favorite color?"]` that just makes it easier to write.
+    In our example, `%+` cenlus is the rune to call a gate, and our gate `++print` takes one argument which is a `tank` to print.  The `+` here is syntactic sugar for `[%leaf "What is your favorite color?"]` that just makes it easier to write.
 
-**`prompt`** is used to construct a prompt for the user to provide input. It takes a single argument that is a tuple. Most `%ask` generators will want to use the `prompt` gate.
+- `prompt` is used to construct a prompt for the user to provide input.  It takes a single argument that is a tuple.  Most `%ask` generators will want to use the `++prompt` gate.
 
-The first element of the `prompt` sample is a flag that indicates whether what the user typed should be echoed out to them or hidden. `%&` will produce echoed output and `%|` will hide the output (for use in passwords or other secret text).
+    The first element of the `++prompt` sample is a flag that indicates whether what the user typed should be echoed out to them or hidden. `%&` will produce echoed output and `%|` will hide the output (for use in passwords or other secret text).
 
-The second element of the `prompt` sample is intended to be information for use in creating autocomplete options for the prompt. This functionality is not yet implemented.
+    The second element of the `++prompt` sample is intended to be information for use in creating autocomplete options for the prompt. This functionality is not yet implemented.
 
-The third element of the `prompt` sample is the `tape` that we would like to use to prompt the user. In the case of our example, we use `"color: "`.
+    The third element of the `++prompt` sample is the `tape` that we would like to use to prompt the user. In the case of our example, we use `"color: "`.
 
-**`produce`** is used to construct the output of the generator. In our example, we produce a `tang`.
+- `produce` is used to construct the output of the generator. In our example, we produce a `tang`.
 
+```hoon
 |=  t=tape
+```
 
-Our gate here takes a `tape` that was produced by `prompt`. If we needed another type of data we could use `parse` to obtain it.
+Our gate here takes a `tape` that was produced by `++prompt`.  If we needed another type of data we could use `++parse` to obtain it.
 
-The rest of this generator should be intelligible to those with Hoon knowledge at this point.
+The rest of this generator should be intelligible to those with Hoon knowledge at this point.
 
-One quirk that you should be aware of, though, is that `tang` prints in reverse order from how it is created. The reason for this is that `tang` was originally created to display stack trace information, which should be produced in reverse order. This leads to an annoyance: we either have to specify our messages backwards or construct them in the order we want and then `flop` the `list`.
+One quirk that you should be aware of, though, is that `tang` prints in reverse order from how it is created.  The reason for this is that `tang` was originally created to display stack trace information, which should be produced in reverse order.  This leads to an annoyance: we either have to specify our messages backwards or construct them in the order we want and then `++flop` the `list`.
 
-### Example:  Parsing `tape`s (`;~` micsig)
+
+##  Parsing `tape`s
 
 We need to build a tool to accept a `tape` containing some characters, then turn it into—something else, something computational.
 
