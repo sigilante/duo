@@ -13,9 +13,12 @@ objectives:
   - "Produce a `%say` generator with optional arguments."
 ---
 
-#   Handling Text
+#   Text Processing I
 
-_We don't deal with formatted text (`tank`s) or parsers here, deferring that discussion.  Formatted text is covered [here](./O-stdlib-io.md) while text parsing is covered [here]()._
+_We don't deal with formatted text (`tank`s) or parsers here, deferring that discussion.  Formatted text and text parsing are covered [in a later module](./O-stdlib-io.md)._
+
+This module will discuss how text is represented in Hoon, discuss tools for producing and manipulating text, and introduce the `%say` generator, a new generator type.
+
 
 ##  Text in Hoon
 
@@ -272,7 +275,7 @@ Applicable `list` operations—some of which you've seen before—include:
 
     You may find the [`?~` wutsig](https://urbit.org/docs/hoon/reference/rune/wut#-wutsig) rune to be helpful.  It tells you whether a value is `~` or not.  (How would you do this with a regular `?:` wutcol?)
 
-The foregoing are, properly speaking, `list` operations.  The follow, in contrast, are `tape`-specific operations:
+The foregoing are `list` operations.  The following, in contrast, are `tape`-specific operations:
 
 - [`++crip`](https://urbit.org/docs/hoon/reference/stdlib/4b#crip) converts a `tape` to a `cord` (`tape`→`cord`).
 
@@ -312,9 +315,14 @@ Given a string of text, what can you do with it?
 
 #### Search
 
-- [`++find`](https://urbit.org/docs/hoon/reference/stdlib/2b#find) `[nedl=(list) hstk=(list)]` locates a sublist (`nedl`, needle) in the list (`hstk`, haystack)
+- [`++find`](https://urbit.org/docs/hoon/reference/stdlib/2b#find) `[nedl=(list) hstk=(list)]` locates a sublist (`nedl`, needle) in the list (`hstk`, haystack).  (`++find` starts counting from zero.)
 
-TODO
+    ```hoon
+    > (find "brillig" "'Twas brillig and the slithy toves")
+    [~ 6]
+    ```
+
+    `++find` returns a `unit`, which right now means that we need to distinguish between nothing found (`~` null) and zero `[~ 0]`.  `unit`s are discussed in more detail in [a later lesson](./L-struct.md).
 
 #### Tokenize/Parse
 

@@ -409,49 +409,41 @@ For reasons which will be elaborated in Trees, this is often employed as the so-
 #t/@ux
 ```
 
-### Mold Runes
+### Type Unions
 
-At this point, we really need to know about only two mold runes:
+[`$?` bucwut](https://urbit.org/docs/hoon/reference/rune/buc#-bucwut) forms a type union.
 
-1.  [`$?` bucwut](https://urbit.org/docs/hoon/reference/rune/buc#-bucwut) forms a type union.
+For instance, if you wanted a gate to return one of an unsigned aura type, but no other type, you could define a type union thus:
 
-    For instance, if you wanted a gate to return one of an unsigned aura type, but no other type, you could define a type union thus:
-    
-    ```
-    $?  [@ud @ux @ub ~]
-    ```
-    
-    and use it in a gate:
-    
-    ```
-    |=  [n=$?(@ud @ux @ub)]
-    (add n 1)
-    ```
-    
-    ```
-    > (foo 4)  
-    5  
-    > (foo 0x5)  
-    6  
-    > (foo 0b110)  
-    7  
-    > (foo ~zod)  
-    -need.?(@ub @ud @ux)  
-    -have.@p  
-    nest-fail  
-    dojo: hoon expression failed
-    ```
+```hoon
+$?  [@ud @ux @ub ~]
+```
 
-    The irregular form of `%?` bucwut looks like this:
-    
-    ```
-    ?(@ud @ux @ub)
-    ```
-    
-    Type unions are mainly helpful when you need to match something that can have multiple options.
+and use it in a gate:
 
-2. [`$:` buccol](https://urbit.org/docs/hoon/reference/rune/buc#-buccol) forms a named tuple.
+```hoon
+|=  [n=$?(@ud @ux @ub)]
+(add n 1)
+```
 
-    What we've been calling a running cell would more conventionally be named a _tuple_, so we'll switch to that syntax now that the idea is more familiar.  Basically its a cell series which doesn't necessarily end in `~`.
+```hoon
+> (foo 4)  
+5  
+> (foo 0x5)  
+6  
+> (foo 0b110)  
+7  
+> (foo ~zod)  
+-need.?(@ub @ud @ux)  
+-have.@p  
+nest-fail  
+dojo: hoon expression failed
+```
 
-    A named tuple is a structured collection of values with faces.  We use these implicitly in an irregular form when we specify the sample of a gate, as `|=([a=@ b=@] (add a b))` expands to a `$:` buccol expression for `[a=@ b=@]`.  Otherwise, we only need these if we are building a special type like a vector (e.g. with two components like an _x_ and a _y_).
+The irregular form of `%?` bucwut looks like this:
+
+```hoon
+?(@ud @ux @ub)
+```
+
+Type unions are mainly helpful when you need to match something that can have multiple options.  We will use them extensively with `@tas` terms, such as `?(%red %green %blue)` which would only admit one of those three tags.

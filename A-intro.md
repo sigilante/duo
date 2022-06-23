@@ -11,14 +11,15 @@ objectives:
 
 Hoon School is designed to teach you Hoon without assuming you have an extensive programming background.  You should be able to following most of it even if you have no programming experience at all yet, though of course experience helps.  We strongly encourage you to try out all the examples of each lesson.  Hoon School is meant for the beginner, but it's not meant to be skimmed.  Each lesson consists of:
 
-1. **Explanations**, which are prose-heavy commentary on the Hoon fundamentals.
+- **Explanations**, which are prose-heavy commentary on the Hoon fundamentals.
 
-2. **Tutorials**, which are line-by-line commentary on example programs.
+- **Exercises**, which challenge you to clarify or expand your own understanding in practice.
 
-3. **Exercises**, which challenge you to clarify or expand your own understanding in practice.
+- **Tutorials**, which are line-by-line commentary on example programs.
 
-There are two flavors of Hoon School:  the Hoon School Live cohort class, in which you work through lessons with other students and receive a certification for completion, and these written Hoon School docs.  To sign up for a future cohort of Hoon School Live, please [let us know of your interest here](https://forms.gle/bbW6QtJPMhsjCCML8) and we'll be in touch.
+There are two flavors of Hoon School:  the Hoon School Live cohort class, in which you work through lessons with other students and receive a certification (`%gora`) for completion, and these written Hoon School docs.  To sign up for a future cohort of Hoon School Live, please [let us know of your interest here](https://forms.gle/bbW6QtJPMhsjCCML8) and we'll be in touch.
 
+<!-- TODO point to HSL/ASL landing pages -->
 
 ##  Why Hoon?
 
@@ -108,14 +109,14 @@ This `:-` rune takes two values and composes them into a _cell_, a pair of value
 
 ##  Pronouncing Hoon
 
-Hoon uses _runes_, or two-character ASCII symbols, to describe its structure.  (These are analogous to keywords in other programming languages.)  Because there has not really been a standard way of pronouncing, say, `#` (hash, pound, number, sharp, hatch) or `!` (exclamation point, bang, shriek, pling), the authors of Urbit decided to adopt a three-letter mnemonic to uniquely refer to each.
+Hoon uses _runes_, or two-character ASCII symbols, to describe its structure.  (These are analogous to keywords in other programming languages.)  Because there has not really been a standard way of pronouncing, say, `#` (hash, pound, number, sharp, hatch) or `!` (exclamation point, bang, shriek, pling), the authors of Urbit decided to adopt a one-syllable mnemonic to uniquely refer to each.
 
 It is highly advisable for you to learn these pronunciations, as the documentation and other developers employ them frequently.  For instance, a rune like `|=` is called a “bartis”, and you will find it designated as such in the docs, in the source code, and among the developers.
 
 | Name | Character | Name | Character | Name | Character |
 | ---- | ----- | ---- | ----- | ---- | ----- |
 | `ace` | `␣` | `gap` | `␣␣`, `\n` | pat | `@` |
-| `bar` | `\|` | `gar` | `>` | `sel` | `[` |
+| `bar` | `|` | `gar` | `>` | `sel` | `[` |
 | `bas` | `\` | `hax` | `#` | `ser` | `]` |
 | `buc` | `$` | `hep` | `-` | `sig` | `~` |
 | `cab` | `_` | `kel` | `{` | `soq` | `'` |
@@ -127,4 +128,4 @@ It is highly advisable for you to learn these pronunciations, as the documentati
 | `fas` | `/` | `pam` | `&` |  |
 | `gal` | `<` | `par` | `)` |  |
 
-Note that the list includes two separate whitespace forms: `ace` for a single space `␣`; gap is either 2+ spaces `␣␣` or a newline `\\n`.  In Hoon, the only whitespace significance is the distinction between `ace` and `gap`—i.e., the distinction between one space and more than one.
+Note that the list includes two separate whitespace forms: `ace` for a single space `␣`; `gap` is either two or more spaces `␣␣` or a line break `\n`.  In Hoon, the only whitespace significance is the distinction between `ace` and `gap`—i.e., the distinction between one space and more than one.

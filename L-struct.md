@@ -2,12 +2,103 @@
 title: Data Structures
 nodes: 183
 objectives:
-  - "Explain what an Urbit ship is."
-  - "Distinguish a fakeship from a liveship."
-  - "Pronounce ASCII characters per standard Hoon developer practice."
+  - "Identify units, sets, maps, and compound structures like jars and jugs."
+  - "Explain why units and vases are necessary."
+  - "Use helper arms and syntax:  `` ` ``, `biff`, `some`, etc."
 ---
 
 #   Data Structures
+
+This lesson will introduce you to several useful data structures built on the door, then discuss how the compiler handles types and the sample.
+
+##  Key Data Structures and Molds
+
+`++map`s are a versatile way to store and access data, but they are far from the only useful pattern.  `++map`s were documented in [the previous module](./K-doors.md).
+
+### `tree`
+
+We use `tree` to make a binary tree data structure in Hoon, e.g., `(tree @)` for a binary tree of atoms.
+
+There are two kinds of `tree` in Hoon:
+
+1. The null tree `~`.
+2. A non-null tree which is a cell with three parts.
+    1. The node value.
+    2. The left child of the node.
+    3. The right child of the node.
+    
+    Each child is itself a tree.  The node value has the face `n`, the left child has the face `l`, and the right child has the face `r`.  The following diagram provides an illustration of a `(tree @)` (without the faces):
+
+```
+          12
+        /    \
+      8       14
+    /   \    /   \
+   4     ~  ~     16
+ /  \            /  \
+~    ~          ~    ~
+```
+
+Hoon supports trees of any type that can be constructed in Hoon, e.g.: `(tree @)`, `(tree ^)`, `(tree [@ ?])`, etc.  Let's construct the tree in the diagram above in the dojo, casting it accordingly:
+
+```
+> `(tree @)`[12 [8 [4 ~ ~] ~] [14 ~ [16 ~ ~]]]
+{4 8 12 14 16}
+```
+
+Notice that we don't have to insert the faces manually; by casting the [noun](/docs/glossary/noun/) above to a `(tree @)` Hoon inserts the faces for us.  Let's put this noun in the dojo subject with the face `b` and pull out the tree at the left child of the `12` node:
+
+```
+> =b `(tree @)`[12 [8 [4 ~ ~] ~] [14 ~ [16 ~ ~]]]
+
+> b
+{4 8 12 14 16}
+
+> l.b
+-find.l.b
+find-fork-d
+```
+
+This didn't work because we haven't first proved to Hoon that `b` is a non-null tree.  A null tree has no `l` in it, after all.  Let's try again, using `?~` to prove that `b` isn't null.  We can also look at `r` and `n`:
+
+```
+> ?~(b ~ l.b)
+{4 8}
+
+> ?~(b ~ r.b)
+{14 16}
+
+> ?~(b ~ n.b)
+12
+```
+
+#### Find and Replace
+
+Here's a program that finds and replaces certain atoms in a `(tree @)`.
+
+```hoon
+|=  [nedl=@ hay=(tree @) new=@]
+^-  (tree @)
+?~  hay  ~
+:+  ?:  =(n.hay nedl)
+      new
+    n.hay
+  $(hay l.hay)
+$(hay r.hay)
+```
+
+`nedl` is the atom to be replaced, `hay` is the tree, and `new` is the new atom with which to replace `nedl`.  Save this as `findreplacetree.hoon` and run in the dojo:
+
+```
+> b
+{4 8 12 14 16}
+
+> +findreplacetree [8 b 94]
+{4 94 12 14 16}
+
+> +findreplacetree [14 b 94]
+{4 8 12 94 16}
+```
 
 ### `set`
 
@@ -15,10 +106,10 @@ A `set` is rather like a `list` except that each entry can only be represented o
 
 `set` operations are provided by `++in`.  Most names are similar to `map`/`++by` operations when applicable.
 
-`++sy` produces a `set` from a `list`:
+[`++silt`](https://urbit.org/docs/hoon/reference/stdlib/2l#silt) produces a `set` from a `list`:
 
 ```hoon
-> =primes (sy ~[2 3 5 7 11 13])
+> =primes (silt ~[2 3 5 7 11 13])
 ```
 
 `++put:in` adds a value to a `set` (and null-ops when the value is already present):
@@ -60,36 +151,84 @@ A `set` is rather like a `list` except that each entry can only be represented o
 {10 6 12 1 2 16 4}
 ```
 
+#### Example:  Cartesian Product
+
+Here's a program that takes two sets of atoms and returns the [Cartesian product](https://en.wikipedia.org/wiki/Cartesian_product) of those sets.  A Cartesian product of two sets `a` and `b` is a set of all the cells whose head is a member of `a` and whose tail is a member of `b`.
+
+```hoon
+|=  [a=(set @) b=(set @)]
+=/  c=(list @)  ~(tap in a)
+=/  d=(list @)  ~(tap in b)
+=|  acc=(set [@ @])
+|-  ^-  (set [@ @])
+?~  c  acc
+%=  $
+  c  t.c
+  acc  |-  ?~  d  acc
+       %=  $
+         d  t.d
+         acc  (~(put in acc) [i.c i.d])
+       ==
+==
+```
+
+Save this as `cartesian.hoon` in your urbit's pier and run in the dojo:
+
+```
+> =c `(set @)`(sy ~[1 2 3])
+
+> c
+{1 2 3}
+
+> =d `(set @)`(sy ~[4 5 6])
+
+> d
+{5 6 4}
+
+> +cartesian [c d]
+{[2 6] [1 6] [3 6] [1 4] [1 5] [2 4] [3 5] [3 4] [2 5]}
+```
+
 ### `unit` Redux (and `vase`)
 
-We encountered the `unit` as a tool for distinguishing null results from actual zeroes:  “using a `unit` allows you to specify something that may not be there.”
+We encountered the `unit` briefly as a tool for distinguishing null results from actual zeroes:  using a `unit` allows you to specify something that may not be there.  For this reason, `unit`s are commonly used for operations that sometimes fail, such as search functions, database lookups, remote data requests, etc.
 
 You can build a `unit` using the tic special notation or [`++some`](https://urbit.org/docs/hoon/reference/stdlib/2a#some):
 
-```
+```hoon
 > `%mars
 [~ %mars]
+
 > (some %mars)
 [~ u=%mars]
 ```
 
 While `++got:by` is one way to get a value back without wrapping it in a `unit`, it's better practice to use the [`unit` logic](https://urbit.org/docs/hoon/reference/stdlib/2a) gates to manipulate gates to work correctly with `unit`s.
 
-For one thing, use [`++need`](https://urbit.org/docs/hoon/reference/stdlib/2a#need) to unwrap a `unit`, or crash if the `unit` is `~` null.
+For example, use [`++need`](https://urbit.org/docs/hoon/reference/stdlib/2a#need) to unwrap a `unit`, or crash if the `unit` is `~` null.
 
 ```hoon
-> =colors `(map @tas @ux)`(my ~[[%red 0xed.0a3f] [%yellow 0xfb.e870] [%green 0x1.a638] [%blue 0x66ff]])
+> =colors (malt `(list (pair @tas @ux))`~[[%red 0xed.0a3f] [%yellow 0xfb.e870] [%green 0x1.a638] [%blue 0x66ff]])
+
+> (~(get by colors) %yellow)
+[~ q=0xfb.e870]
+
 > (need (~(get by colors) %yellow))
 0xfb.e870
-> (need (~(get by colors) %teal))  
+
+> (~(get by colors) %teal)
+~
+
+> (need (~(get by colors) %teal))
 dojo: hoon expression failed
 ```
 
-Rather than unwrap a `unit`, one can modify gates to work with `unit`s directly even if they're not natively set up that way.  For instance, one cannot decrement a `unit` because `++dec` doesn't accept a `unit`.  [`++bind`](https://urbit.org/docs/hoon/reference/stdlib/2a#bind) can bind a non-`unit` function
+Rather than unwrap a `unit`, one can modify gates to work with `unit`s directly even if they're not natively set up that way.  For instance, one cannot decrement a `unit` because `++dec` doesn't accept a `unit`.  [`++bind`](https://urbit.org/docs/hoon/reference/stdlib/2a#bind) can bind a non-`unit` function—another gate-building gate!.
 
 ```hoon
 > (bind ((unit @ud) [~ 2]) dec)  
 [~ 1]
+
 > (bind (~(get by colors) %orange) red)  
 [~ 0xff]
 ```
@@ -98,32 +237,87 @@ Rather than unwrap a `unit`, one can modify gates to work with `unit`s directly 
 
 A `+$vase` is a pair of type and value, such as that returned by `!>` zapgar.  A `vase` is useful when transmitting data in a way that may lose its type information.
 
-### `jar` and `jug`
+### Containers of Containers
 
-`map`s and `set`s are frequently used in the standard library and in the extended ecosystem (such as in `graph-store`).  There are a couple of common patterns which recur often enough that they have their own names:
+`map`s and `set`s are frequently used in the standard library and in the extended ecosystem (such as in `graph-store`).  There are a some other common patterns which recur often enough that they have their own names:
 
-- [`++jar`](https://urbit.org/docs/hoon/reference/stdlib/2o#jar) is a mold for a `map` of `list`s.
+- [`++jar`](https://urbit.org/docs/hoon/reference/stdlib/2o#jar) is a mold for a `map` of `list`s.  `++jar` uses the [`++ja`](https://urbit.org/docs/hoon/reference/stdlib/2j#ja) core.
 
-- [`++jug`](https://urbit.org/docs/hoon/reference/stdlib/2o#jug) is a mold for a `map` of `set`s.
+- [`++jug`](https://urbit.org/docs/hoon/reference/stdlib/2o#jug) is a mold for a `map` of `set`s.  `++jug` uses the  [`++ju`](https://urbit.org/docs/hoon/reference/stdlib/2j#ju) core.
 
-(There's an example in the slides of a `jar`.)
+- `++mip` is a mold for a map of maps.  `++mip` lives in the `%garden` desk in the Urbit repo in `/lib/mip.hoon`.  Affordances are still few and there are not currently docs on how to use `++mip`, but a short example follows:
 
-These are supported by the [`++ja`](https://urbit.org/docs/hoon/reference/stdlib/2j#ja) core and the [`++ju`](https://urbit.org/docs/hoon/reference/stdlib/2j#ju) core.
+    ```hoon
+    > =mip -build-file /=garden=/lib/mip/hoon
+    > =my-map-warm (malt `(list (pair @tas @ux))`~[[%red 0xed.0a3f] [%yellow 0xfb.e870]])
+    > =my-map-cool (malt `(list (pair @tas @ux))`~[[%green 0x1.a638] [%blue 0x66ff]])
+    > =my-mip *(mip:mip @tas (map @tas @ux))
+    > =my-mip (~(put bi:mip my-mip) %cool %blue 0x66ff)
+    > =my-mip (~(put bi:mip my-mip) %cool %green 0x1.a638)
+    > =my-mip (~(put bi:mip my-mip) %warm %red 0xed.0a3f)
+    > =my-mip (~(put bi:mip my-mip) %warm %yellow 0xfb.e870)
+    > my-mip
+    [ n=[p=%warm q=[n=[p=%yellow q=0xfb.e870] l=[n=[p=%red q=0xed.0a3f] l=~ r=~] r=~]]
+      l=[n=[p=%cool q=[n=[p=%green q=0x1.a638] l=[n=[p=%blue q=0x66ff] l=~ r=~] r=~]] l=~ r=~]
+      r=~
+    ]
 
-mip
+    > (~(got bi:mip my-mip) %cool %green)
+    0x1.a638
 
----
+    > ~(tap bi:mip my-mip)
+    ~[
+      [x=%warm y=%yellow v=0xfb.e870]
+      [x=%warm y=%red v=0xed.0a3f]
+      [x=%cool y=%green v=0x1.a638]
+      [x=%cool y=%blue v=0x66ff]
+    ]
+    ```
 
-> ##  Adding an Arm
-> 
-> Add an arm to the door which calculates the linear function
-> _a×x + b_.
-> 
-> Add another arm which calculates the derivative of the first
-> quadratic function, _2×a×x + b_.
-{: .challenge}
+    `mip`s are unjetted and quite slow but serve as a proof of concept.
 
-In the above example we created a door `poly` with sample `[a=@ud b=@ud c=@ud]`.  If we investigated, we would find that the initial value of each is `0`, the bunt value of `@ud`.  What if we wish to define a door with a chosen sample value directly?  We can make use of the `$_` rune, whose irregular form is simply `_`.  To create the door `poly` with the sample set to have certain values in the Dojo, we would write
+- `++mop` ordered maps are discussed in [the App School guides](TODO).
+
+
+##  Molds and Samples
+
+### Modifying Gate Behavior
+
+Sometimes you need to modify parts of a core (like a gate) on-the-fly to get the desired behavior.  For instance, if you are using `++roll` to calculate the multiplicative product of the elements of a list, this “just works”:
+
+```hoon
+> (roll `(list @ud)`~[10 12 14 16 18] mul)  
+483.840
+```
+
+In contrast, if you do the same thing to a list of numbers with a fractional part (`@rs` floating-point values), the naïve operation will fail:
+
+```hoon
+> (roll `(list @rs)`~[.10 .12 .14 .16 .18] mul:rs)  
+.0
+```
+
+Why is this?  Let's peek inside the gates and see.  Since we know a core is a cell of `[battery payload]`, let's take a look at the `payload`:
+
+```hoon
+> +:mul  
+[[a=1 b=1] <46.hgz 1.pnw %140>]  
+> +:mul:rs  
+[[a=.0 b=.0] <21.hqd [r=?(%d %n %u %z) <51.qbt 123.zao 46.hgz 1.pnw %140>]>]
+```
+
+The correct behavior for `++mul:rs` is really to multiply starting from one, not zero, so that `++roll` doesn't wipe out the entire product.
+
+### Custom Samples
+
+In an earlier exercise we created a door with sample `[a=@ud b=@ud c=@ud]`.  If we investigated, we would find that the initial value of each is `0`, the bunt value of `@ud`.
+
+```hoon
+> +6:poly
+[a=0 b=0 c=0]
+```
+
+What if we wish to define a door with a chosen sample value directly?  We can make use of the `$_` rune, whose irregular form is simply `_`.  To create the door `poly` with the sample set to have certain values in the Dojo, we would write
 
 ```unknown
 > =poly |_  [a=_5 b=_4 c=_3]
@@ -135,122 +329,41 @@ In the above example we created a door `poly` with sample `[a=@ud b=@ud c=@ud]`.
 > (quad:poly 2)  
 31
 ```
----
 
-#   Type Checking
+For our earlier example with `++roll`, if we wanted to set the default sample to have a different value than the bunt of the type, we could use `_` cab:
 
-in-depth atom stuff
-https://urbit.org/docs/hoon/hoon-school/type-checking-and-type-inference
-https://urbit.org/docs/hoon/hoon-school/lists#an-aside-about-casting
-
-
-## Auras as 'Soft' Types
-
-It's important to understand that Hoon's type system doesn't enforce auras as strictly as it does other types. Auras are 'soft' type information. To see how this works, we'll take you through the process of converting the aura of an atom to another aura.
-
-Hoon makes **some** effort to enforce that the correct aura is produced by an expression:
-
-```unknown
-> ^-(@ud 0x10)
-nest-fail
-
-> ^-(@ud 0b10)
-nest-fail
-
-> ^-(@ux 100)
-nest-fail
+```hoon
+> =mmul |=([a=_1 b=_1] (mul:rs a b))
+> (roll `(list @rs)`~[.10 .12 .14 .16 .18] mmul)
+> .483840
 ```
 
-But there are ways around this. First, you can cast to a more general aura, as long as the current aura nests under the cast aura. E.g., `@ub` to `@u`, `@ux` to `@u`, `@u` to `@`, etc. By doing this you're essentially telling Hoon to throw away some aura information:
+### Named Tuples
 
-```unknown
-> ^-(@u 0x10)
-16
+A named tuple is a structured collection of values with faces.  The [`$:` buccol](https://urbit.org/docs/hoon/reference/rune/buc#-buccol) rune forms a named tuple.  We use these implicitly in an irregular form when we specify the sample of a gate, as `|=([a=@ b=@] (add a b))` expands to a `$:` buccol expression for `[a=@ b=@]`.  Otherwise, we only need these if we are building a special type like a vector (e.g. with two components like an _x_ and a _y_).
 
-> ? ^-(@u 0x10)
-  @u
-16
+### Structure Mode
 
-> ^-(@u 0b10)
-2
+Most Hoon expressions evaluate normally (that's what “normal” means), what we'll call _noun mode_ (or _normal mode_).  However, sample definitions and `+$` lusbuc mold specification arms evaluate in what is called _structure mode_.  (You may occasionally see this the older term “spec mode”.)  Structure mode expressions use a similar syntax to regular Hoon expressions but create structure definitions instead.
 
-> ? ^-(@u 0b10)
-  @u
-2
+For instance, in eval mode if you use the irregular form `p=1` this is an irregular form of the [`^=` kettis](https://urbit.org/docs/hoon/reference/rune/ket#-kettis) rune.  This is one way to define a variable using a [`=+` tislus](https://urbit.org/docs/hoon/reference/rune/tis#-tislus); these are equivalent statements:
+
+```hoon
+> =+(hello=1 hello)
+1
+
+> =+(^=(hello 1) hello)
+1
 ```
 
-In fact, you can cast any atom all the way to the most general case `@`:
+(Normally we have preferred [`=/` tisfas](https://urbit.org/docs/hoon/reference/rune/tis#-tisfas) in the Hoon School docs, but that is just for consistency.)
 
-```unknown
-> ^-(@ 0x10)
-16
+In a sample definition, such as in a gate, the statement is evaluated in structure mode; these are equivalent statements:
 
-> ? ^-(@ 0x10)
-  @
-16
+```hoon
+|=(hello=@ hello)
 
-> ^-(@ 0b10)
-2
-
-> ? ^-(@ 0b10)
-  @
-2
+|=($=(hello @) hello)
 ```
 
-Anything of the general aura `@` can, in turn, be cast to more specific auras. We can show this by embedding a cast expression inside another cast:
-
-```unknown
-> ^-(@ud ^-(@ 0x10))
-16
-
-> ^-(@ub ^-(@ 0x10))
-0b1.0000
-
-> ^-(@ux ^-(@ 10))
-0xa
-```
-
-Hoon uses the outermost cast to infer the type:
-
-```unknown
-> ? ^-(@ub ^-(@ 0x10))
-  @ub
-0b1.0000
-```
-
-As you can see, an atom with one aura can be converted to another aura. For a convenient shorthand, you can do this conversion with irregular cast syntax, e.g. `` `@ud` ``, rather than using the `^-` rune twice:
-
-```unknown
-> `@ud`0x10
-16
-
-> `@ub`0x10
-0b1.0000
-
-> `@ux`10
-0xa
-```
-
-This is what we mean when we call auras 'soft' types. The above examples show that the programmer can get around the type system for auras by casting up to `@` and then back down to the specific aura, say `@ub`; or by casting with `` `@ub` `` for short.
-
-
-Note: there is currently a type system issue that causes some of these functions to fail when passed a list b after some type inference has been performed on b. For an illustration of the bug, let's set b to be a (list @) of ~[11 22 33 44] in the Dojo:
-
-> =b `(list @)`~[11 22 33 44]
-
-> b
-~[11 22 33 44]
-Now let's use ?~ to prove that b isn't null, and then try to snag it:
-
-> ?~(b ~ (snag 0 b))
-nest-fail
-The problem is that snag is expecting a raw list, not a list that is known to be non-null.
-
-You can cast b to (list) to work around this:
-
-> ?~(b ~ (snag 0 `(list)`b))
-11
-
-TODO with ?: here and refer to ?~ in the next lesson
-
-(This can be done more idiomatically and more tersely using `?~` wutsig, which is introduced in the next module of Hoon School.)
+There are several other subtle cases where normal mode and structure mode diverge, but most of the time structure mode is invisible to you.  The [`$` buc runes](https://urbit.org/docs/hoon/reference/rune/buc) are typically invoked in structure mode.

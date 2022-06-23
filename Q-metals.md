@@ -34,9 +34,19 @@ This lesson discusses both genericity and variance for core management.  These t
 
 Polymorphism is a programming concept that allows a piece of code to use different types at different times.  It's a common technique in most languages to make code that can be reused for many different situations, and Hoon is no exception.
 
-A dry gate is the kind of gate that you're already familiar with:  a one-armed [core](https://urbit.org/docs/glossary/core/) with a sample.  A wet gate is also a one-armed [core](https://urbit.org/docs/glossary/core/) with a sample, but there is a difference in how types are handled.  With a dry gate, when you pass in an argument and the code gets compiled, the type system will try to cast to the type specified by the gate; if you pass something that does not fit in the specified type, for example a `cord` instead of a `cell` you will get a `nest-fail` error.  When you pass arguments to a wet gate, their types are preserved and type analysis is done at the definition site of the gate rather than at the call site.
+### Dry Cores
 
-In other words, for a wet gate, we ask:  “Suppose this core was actually _compiled_ using the modified payload instead of the one it was originally built with?  Would the Nock formula we generated for the original template actually work for the modified `payload`?”  Basically, wet gates allow you to hot-swap code at runtime and see if it “just works”—they defer the actual substitution in the `sample`.  Wet gates are rather like [macros](https://en.wikipedia.org/wiki/Macro_%28computer_science%29) in this sense.
+A dry gate is the kind of gate that you're already familiar with:  a one-armed [core](https://urbit.org/docs/glossary/core/) with a sample.  A wet gate is also a one-armed [core](https://urbit.org/docs/glossary/core/) with a sample, but there is a difference in how types are handled.  With a dry gate, when you pass in an argument and the code gets compiled, the type system will try to cast to the type specified by the gate; if you pass something that does not fit in the specified type, for example a `cord` instead of a `cell` you will get a `nest-fail` error.
+
+A core's payload can change from its original value.  In fact, this happens in the typical function call:  the default sample is replaced with an input value.  How can we ensure that the core's arms are able to run correctly, that the payload type is still appropriate despite whatever changes it has undergone?
+
+There is a type check for each arm of a dry core, intended to verify that the arm's parent core has a payload of the correct type.
+
+When the `$` buc arm of a dry gate is evaluated it takes its parent core—the dry gate itself—as the subject, often with a modified sample value.  But any change in sample type should be conservative; the modified sample value must be of the same type as the default sample value (or possibly a subtype).  When the `$` buc arm is evaluated it should have a subject of a type it knows how to use.
+
+### Wet Gates
+
+When you pass arguments to a wet gate, their types are preserved and type analysis is done at the definition site of the gate rather than at the call site.  In other words, for a wet gate, we ask:  “Suppose this core was actually _compiled_ using the modified payload instead of the one it was originally built with?  Would the Nock formula we generated for the original template actually work for the modified `payload`?”  Basically, wet gates allow you to hot-swap code at runtime and see if it “just works”—they defer the actual substitution in the `sample`.  Wet gates are rather like [macros](https://en.wikipedia.org/wiki/Macro_%28computer_science%29) in this sense.
 
 Consider a function like `++turn` which transforms each element of a list. To use `++turn`, we install a list and a transformation function in a generic core.  The type of the list we produce depends on the type of the list and the type of the transformation function.  But the Nock formulas for transforming each element of the list will work on any function and any list, so long as the function's argument is the list item.
 
@@ -112,6 +122,10 @@ Line by line:
 
 `++need` is wet because we don't want to lose type information when we extract from the `unit`.
 
+### Parametric Polymorphism
+
+TODO
+https://urbit.org/docs/hoon/hoon-school/type-polymorphism
 
 ##  Variadicity
 

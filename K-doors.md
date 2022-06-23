@@ -161,94 +161,35 @@ As before with `++double`, Hoon can't find an `a` to modify in a gate that doesn
 
 ### Slamming a Gate
 
-Our two main tools for evaluating Hoon with `%` cen runes are:
+If you check the docs on our now-familiar [`%-` cenhep](https://urbit.org/docs/hoon/reference/rune/cen#cenhep), you'll find that it is actually sugar syntax for another rune:
 
-- [`%-` cenhep](https://urbit.org/docs/hoon/reference/rune/cen#cenhep) accepts two children, a wing which resolves to a gate; and a sample which is provided at `+6` to the gate.  It yields the result of the Hoon expression, which may be a simple value, a data structure, or a core.  You have used `%-` cenhep extensively now.
-- [`%~` censig](https://urbit.org/docs/hoon/reference/rune/cen#censig) accepts three children, a wing which resolves to an arm in a door; the aforesaid door; and a sample which is provided at `+6` to the door.  It conventionally yields a gate which can then be applied to a sample.
+> This rune is for evaluating the `$` arm of a gate, i.e., calling a gate as a function. `a` is the gate, and `b` is the desired sample value (i.e., input value) for the gate.
+>
+> ```hoon
+> %~($ a b)
+> ```
 
-It turns out that `%-` cenhep is actually a special case of `%~` censig:  it resolves to `%~($ a b)`, evaluating the `$` buc arm of a gate core.  (A door really is just a more general case of a gate.  Think carefully about this.  It may not come at once, but once you really get cores and doors the power of Hoon will unlock to you.)
+So all gate calls actually pass back through [`%~` censig](https://urbit.org/docs/hoon/reference/rune/cen#-censig).  What's the difference?
 
-TODO fix flow here
+The [`%~` censig](https://urbit.org/docs/hoon/reference/rune/cen#censig) rune accepts three children, a wing which resolves to an arm in a _door_; the aforesaid door; and a `sample` for the door.
 
-### Other Functions in the Hoon Standard Library
-
-Let's look once more at the parent core of the `add` arm in the Hoon standard library:
-
-```hoon
-> ..add
-<46.hgz 1.pnw %140>
-```
-
-The battery of this core contains 46 arms, each of which evaluates to a gate in the standard library.  This “library” is nothing more than a core containing useful basic functions that Hoon often makes available as part of the subject.  You can see the Hoon code defining these arms near the beginning of [hoon.hoon](https://github.com/urbit/urbit/blob/master/pkg/arvo/sys/hoon.hoon), starting with [`++ add`](https://github.com/urbit/urbit/blob/master/pkg/arvo/sys/hoon.hoon#L21).  (The Hoon standard library is written entirely in Hoon.)
-
-Here are some of the other gates that can be generated from this core in the Hoon standard library.  We hope it is fairly obvious what each one of these does, but check the docs if any of them are obscure.  <!-- TODO really? rework this -->
-
-```hoon
-> (dec 18)
-17
-
-> (dec 17)
-16
-
-> (gth 11 7)
-%.y
-
-> (gth 7 11)
-%.n
-
-> (gth 11 11)
-%.n
-
-> (lth 11 7)
-%.n
-
-> (lth 7 11)
-%.y
-
-> (lth 11 11)
-%.n
-
-> (max 12 14)
-14
-
-> (max 14 14)
-14
-
-> (max 14 432)
-432
-
-> (mod 11 7)
-4
-
-> (mod 22 7)
-1
-
-> (mod 33 7)
-5
-
-> (sub 234 123)
-111
-```
+Basically, whenever you use `%-` cenhep, it actually looks up a wing in a door using `%~` censig, which is a more general type of core than a gate.  Whatever that wing resolves to is then provided a `sample`.  The resulting Hoon expression is evaluated and the value is returned.
 
 
 ##  Doors
 
-Doors are another kind of core whose arms evaluate to make gates.  The difference is that a door also has its own sample.  A door is the most general case of a function in Hoon.  (You could say a "gate-building core" or a "function-building function" to clarify what the intent of most of these are.)
+Doors are another kind of core whose arms evaluate to make gates, as we just discovered.  The difference is that a door also has its own sample.  A door is the most general case of a function in Hoon.  (You could say a "gate-building core" or a "function-building function" to clarify what the intent of most of these are.)
 
 A core is a cell of code and data, called `[battery payload]`.  The `battery` contains a series of arms, and the `payload` contains all the data necessary to run those arms correctly.
 
-A _door_ is a core with a sample.  That is, a door is a core whose payload is a cell of sample and context:  `[sample context]`.
+A _door_ is a core with a sample.  That is, a door is a core whose payload is a cell of sample and context:  `[sample context]`.  A door's overall sample can affect how its gate-building arms work.
 
 ```
-        Door
-
+        door
        /    \
-
-Battery      .
-
+battery      .
             / \
-
-      Sample   Context
+      sample   context
 ```
 
 It follows from this definition that a gate is a special case of a door.  A gate is a door with exactly one arm, named `$` buc.
@@ -293,15 +234,13 @@ If we built this as a door instead, we could push the parameters out to a differ
 
 This will be used in two steps:  a gate-building step then a gate usage step.
 
-We produce a gate from a door's arm using the [`%~` censig](https://urbit.org/docs/hoon/reference/rune/cen#-censig) rune, almost always used in its irregular form, `~()`.
+We produce a gate from a door's arm using the [`%~` censig](https://urbit.org/docs/hoon/reference/rune/cen#-censig) rune, almost always used in its irregular form, `~()`.  Here we prime the door with `[5 4 3]`, which yields a gate:
 
 ```hoon
 ~(quad poly [5 4 3])
 ```
 
-By itself, not so useful.  We could pin it into the Dojo, for instance, to use later.
-
-Our ultimate goal is to use the built gate on particular data, e.g.,
+By itself, not so much to say.  We could pin it into the Dojo, for instance, to use later.  Our ultimate goal is to use the built gate on particular data, however:
 
 ```hoon
 > (~(quad poly [5 4 3]) 2)
@@ -414,26 +353,15 @@ Readers with some mathematical background may notice that `~( )` expressions all
 
 ```hoon
 > ~(plus c 7)
-< 1.gxk
-  { a/@
-    < 3.iba
-      { b/@
-        {our/@p now/@da eny/@uvJ}
-        < 19.anu
-          24.tmo
-          6.ipz
-          38.ard
-          119.spd
-          241.plj
-          51.zox
-          93.pqh
-          74.dbd
-          1.qct
-          $141
-        >
-      }
+< 1.xpd
+  [ a=@
+    < 3.bnz
+      [ b=@
+        [our=@p now=@da eny=@uvJ]
+        <17.ayh 34.ozb 14.usy 54.uao 77.gmv 232.hhi 51.qbt 123.ppa 46.hgz 1.pnw %140>
+      ]
     >
-  }
+  ]
 >
 
 > b:~(plus c 7)
@@ -443,113 +371,39 @@ Readers with some mathematical background may notice that `~( )` expressions all
 17
 ```
 
-Thus, you may think of the `c` door as a function for making functions. Use the `~(arm c arg)` syntax -- `arm` defines which kind of gate is produced (i.e., which arm of the door is used to create the gate), and `arg` defines the value of `b` in that gate, which in turn affects the product value of the gate produced.
+Thus, you may think of the `c` door as a function for making functions. Use the `~(arm c arg)` syntax—`arm` defines which kind of gate is produced (i.e., which arm of the door is used to create the gate), and `arg` defines the value of `b` in that gate, which in turn affects the product value of the gate produced.
 
-The standard library provides [currying functionality](https://urbit.org/docs/hoon/reference/stdlib/2n#curry) outside of the context of doors - see `+curr` and `+cury`.
+The standard library provides [currying functionality](./P-func.md) outside of the context of doors.
 
 #### Creating Doors with a Modified Sample
 
 In the above example we created a door `c` with sample `b=@` and found that the initial value of `b` was `0`, the bunt value of `@`. We then created new door from `c` by modifying the value of `b`. But what if we wish to define a door with a chosen sample value directly? We make use of the `$_` rune, whose irregular form is simply `_`. To create the door `c` with the sample `b=@` set to have the value `7` in the dojo, we would write
 
+```hoon
 > =c |_  b=_7
-
   ++  plus  |=(a=@ (add a b))
-
   ++  times  |=(a=@ (mul a b))
-
   ++  greater  |=(a=@ (gth a b))
-
   --
+```
 
-Here the type of `b` is inferred to be `@` based on the example value `7`, similar to how we've seen casting done by example. You will learn more about how types are inferred in [Lesson 2.2](https://urbit.org/docs/@docs/hoon/hoon-school/type-checking-and-type-inference).
+Here the type of `b` is inferred to be `@` based on the example value `7`, similar to how we've seen casting done by example.  You will learn more about how types are inferred in the [next module](./L-struct.md).
 
-### Doors in the Hoon Standard Library
+#### Exercise:  Adding Arms to a Door
 
-Back in lesson 1.2 you were introduced to atom auras, which are metadata used by Hoon that defines how that atom is interpreted and pretty-printed. Atoms are unsigned integers, but sometimes programmers want to work with fractions and decimal points. Accordingly, there are auras for [floating point numbers](https://en.wikipedia.org/wiki/Floating-point_arithmetic). Let's work with the aura for doing [single-precision](https://en.wikipedia.org/wiki/Single-precision_floating-point_format) floating point arithmetic: `@rs`.
+Recall the quadratic equation door.
 
-The `@rs` has its own literal syntax. These atoms are represented as a `.` followed by digits, and possibly another `.` (for the decimal point) and more digits. For example, the float 3.14159 can be represented as a single-precision (32 bit) float with the literal expression `.3.14159`.
+```hoon
+|_  [a=@ud b=@ud c=@ud]
+++  quad
+  |=  x=@ud
+  (add (add (mul a (mul x x)) (mul b x)) c)
+--
+```
 
-You can't use the ordinary `add` function to get the correct sum of two `@rs` atoms:
+- Add an arm to the door which calculates the linear function _a_×_x_ + _b_.
 
-> (add .3.14159 .2.22222)
-
-2.153.203.882
-
-That's because the `add` gate is designed for use with raw atoms, not floating point values. You can add two `@rs` atoms as follows:
-
-> (add:rs .3.14159 .2.22222)
-
-.5.36381
-
-It turns out that the `rs` in `add:rs` is a Hoon standard library arm that produces a door. Let's take a closer look:
-
-> rs
-
-<21|fan {r/?($n $u $d $z) <51.zox 93.pqh 74.dbd 1.qct $141>}>
-
-The battery of this core, pretty-printed as `21|fan`, has 21 arms that define functions specifically for `@rs` atoms. One of these arms is named `add`; it's a different `add` from the standard one we've been using for vanilla atoms. So when you invoke `add:rs` instead of just `add` in a function call, (1) the `rs` door is produced, and then (2) the name search for `add` resolves to the special `add` arm in `rs`. This produces the gate for adding `@rs` atoms:
-
-> add:rs
-
-< 1.hsu
-
-  {{a/@rs b/@rs} <21.fan {r/?($n $u $d $z) <51.zox 93.pqh 74.dbd 1.qct $141>}>}
-
->
-
-What about the sample of the `rs` door? The pretty-printer shows `r/?($n $u $d $z)`. What does this mean? Without yet explaining this notation fully, we'll simply say that the `rs` sample can take one of four values: `%n`, `%u`, `%d`, and `%z`. These argument values represent four options for how to round `@rs` numbers:
-
-%n -- round to the nearest value
-
-%u -- round up
-
-%d -- round down
-
-%z -- round to zero
-
-The default value is `%z` -- round to zero. When we invoke `add:rs` to call the addition function, there is no way to modify the `rs` door sample, so the default rounding option is used. How do we change it? We use the `~( )` notation: `~(arm door arg)`.
-
-Let's evaluate the `add` arm of `rs`, also modifying the door sample to `%u` for 'round up':
-
-> ~(add rs %u)
-
-< 1.hsu
-
-  {{a/@rs b/@rs} <21.fan {r/?($n $u $d $z) <51.zox 93.pqh 74.dbd 1.qct $141>}>}
-
->
-
-This is the gate produced by `add`, and you can see that its sample is a pair of `@rs` atoms. But if you look in the context you'll see the `rs` door. Let's look in the sample of that core to make sure that it changed to `%u`. We'll use the wing `+6.+7` to look at the sample of the gate's context:
-
-> +6.+7:~(add rs %u)
-
-r=%u
-
-It did indeed change. We also see that the door sample uses the face `r`, so let's use that instead of the unwieldy `+6.+7`:
-
-> r:~(add rs %u)
-
-%u
-
-We can do the same thing for rounding down, `%d`:
-
-> r:~(add rs %d)
-
-%d
-
-Let's see the rounding differences in action. Because `~(add rs %u)` produces a gate, we can call it like we would any other gate:
-
-> (~(add rs %u) .3.14159265 .1.11111111)
-
-.4.252704
-
-> (~(add rs %d) .3.14159265 .1.11111111)
-
-.4.2527037
-
-This difference between rounding up and rounding down might seem strange at first. There is a difference of 0.0000003 between the two answers. Why does this gap exist? Single-precision floats are 32-bit and there's only so many distinctions that can be made in floats before you run out of bits.
-
-Just as there is a door for `@rs` functions, there is a Hoon standard library door for `@rd` functions (double-precision 64 bit floats), another for `@rq` functions (quad-precision 128 bit floats), and more.
+- Add another arm which calculates the derivative of the first quadratic function, 2×_a_×_x_ + _b_.
 
 
 ##  Key-Value Pairs:  `map` as Door
@@ -571,19 +425,13 @@ In Urbit, all values are static and never change.  (This is why we “overwrite�
 
 We'll build a color `map`, from a `@tas` of a [color's name](https://en.wikipedia.org/wiki/List_of_Crayola_crayon_colors) to its HTML hexadecimal representation as a `@ux` hex value.
 
-We can produce a `map` from a `list` of key-value cells using the `++my` function:
+We can produce a `map` from a `list` of key-value cells using the [`++malt`](https://urbit.org/docs/hoon/reference/stdlib/2l#malt) function.  Using `@tas` terms as keys (which is common) requires us to explicitly mark the list as `(list (pair @tas @ux))`:
 
 ```hoon
-> =colors (my ~[[%red 0xed.0a3f] [%yellow 0xfb.e870] [%green 0x1.a638] [%blue 0x66ff]])
+> =colors (malt `(list (pair @tas @ux))`~[[%red 0xed.0a3f] [%yellow 0xfb.e870] [%green 0x1.a638] [%blue 0x66ff]])
 ```
 
-We could designate the mold of this as a `(map @tas @ux)`, altho examine the type spear and see why this isn't completely correct.  In fact, due to the way `@tas` `term`s work, it's more convenient to explicitly supertype the key mold when defining the `map` in the first place:
-
-```hoon
-> =colors `(map @tas @ux)`(my ~[[%red 0xed.0a3f] [%yellow 0xfb.e870] [%green 0x1.a638] [%blue 0x66ff]])
-```
-
-To insert one key-value pair at a time, we use `put`.  We need to either pin it into the subject for Dojo or modify it with `=/` tisfas.
+To insert one key-value pair at a time, we use `put`.  In Dojo, we need to either pin it into the subject or modify a copy of the map for the rest of the expression using `=/` tisfas.
 
 ```hoon
 > =colors (~(put by colors) [%orange 0xff.8833])
@@ -614,7 +462,7 @@ What is that cell?  Wasn't the value stored as `0xff.8833`?  Well, one fundament
 
 - What does `[~ ~]` mean when returned from a `map`?
 
-`unit`s are common enough that they have their own syntax and set of operational functions.  We'll look at them more in a bit.
+`unit`s are common enough that they have their own syntax and set of operational functions.  We'll look at them more in [the next module](./K-doors.md).
 
 ```hoon
 > (~(get by colors) %brown)
@@ -760,7 +608,7 @@ You can apply a gate to each value, rather like `++turn` in Lesson 4, using `++r
     <|🂭 🂨 🂵 🃒 🃊|>
     ```
 
-#### Exercise:  Caesar Cipher
+#### Tutorial:  Caesar Cipher
 
 The Caesar cipher is a shift cipher ([that was indeed used anciently](https://en.wikipedia.org/wiki/Caesar_cipher)) wherein each letter in a message is encrypted by replacing it with one shifted some number of positions down the alphabet.  For example, with a “right-shift” of `1`, `a` would become `b`, `j` would become `k`, and `z` would wrap around back to `a`.
 
@@ -1059,3 +907,62 @@ Now, to decode, we can put either of our ciphers in with the appropriate key and
 2.  Extend the example generator to allow for use of characters other than a-z. Make it shift the new characters independently of the alpha characters, such that punctuation is only encoded as other punctuation marks.
 3.  Build a gate that can take a Caesar shifted `tape` and produce all possible unshifted `tapes`.
 4.  Modify the example generator into a `%say` generator.
+
+
+##  A Bit More on Cores
+
+The [`|^` barket](https://urbit.org/docs/hoon/reference/rune/bar#-barket) rune is an example of what we can call a _convenience rune_, similar to the idea of sugar syntax (irregular syntax to make writing certain things out in a more expressive manner).  `|^` barket produces a core with _at least_ a `$` buc arm and computes it immediately, called a _cork_.  (So a cork is like a trap in the regard of computing immediately, but it has more arms than just `$` buc.)
+
+This code calculates the volume of a cylinder, _A=πr²h_.
+
+```hoon
+=volume-of-cylinder |^
+(mul:rs (area-of-circle .2.0) height)
+++  area-of-circle
+  |=  r=@rs
+  (mul:rs pi r)
+++  pi  .3.1415926
+++  height  .10.0
+--
+```
+
+Since all of the values either have to be pinned ahead of time or made available as arms, a `|^` barket would probably be used inside of a gate.  Of course, since it is a core with a `$` buc arm, one could also use it recursively to calculate values like the factorial.
+
+If you read the docs, you'll find that a [`|-` barhep](https://urbit.org/docs/hoon/reference/rune/bar#-barhep) rune “produces a trap (a core with one arm `$`) and evaluates it.”  So a trap actually evaluates to a `|%` barcen core with an arm `$`:
+
+```hoon
+:: count to five
+=/  index  1
+|-
+?:  =(index 5)  index
+$(index +(index))
+```
+
+actually translates to
+
+```hoon
+:: count to five
+=/  index  1
+=<  $
+|%
+++  $
+  ?:  =(index 5)  index
+  %=  $
+    index  +(index)
+  ==
+--
+```
+
+You can also create a trap for later use with the [`|.` bardot](https://urbit.org/docs/hoon/reference/rune/bar#-bardot) rune.  It's quite similar, but without the `=<($...` part then it doesn't get evaluated immediately.
+
+```hoon
+> =forty-two |.(42)
+> $:forty-two
+42
+> (forty-two)
+42
+```
+
+What is a gate?  It is a door with only one arm `$` buc, and whenever you invoke it then that default arm's expression is referred to and evaluated.
+
+A _gate_ and a _trap_ are actually very similar:  a [gate](https://urbit.org/docs/hoon/reference/rune/bar#-bartis) simply has a sample (and can actively change when evaluated or via a `%=` cenhep), whereas a trap does not (and can _only_ be passively changed via something like `%=` cenhep).

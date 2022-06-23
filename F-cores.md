@@ -8,6 +8,7 @@ objectives:
   - "Consider Hoon structures as cores."
   - "Identify the special role of the `$` buc arm in many cores."
   - "Order neighboring cores within the subject for addressibility."
+  - "Produce a type arm."
 ---
 
 #   Cores
@@ -414,6 +415,33 @@ $(counter (add counter 1), sum (add sum counter))
 
 This statement means that we recalculate the `$` buc arm of the current subject with the indicated changes.  But what is `$` buc?  `$` buc is the _default arm_ for many core structures, including `|=` bartis gate cores and `|-` barhep trap cores.
 
+### What is a Gate?
+
+A core is a cell:  `[battery payload]`.
+
+A gate is a core with two distinctive properties:
+
+1.  The **battery** of a gate contains an arm which has the special name `$` buc.  The `$` buc arm contains the instructions for the function in question.
+2.  The **payload** of a gate consists of a cell of `[sample context]`.
+    1.  The **sample** is the part of the payload that stores the "argument" (i.e., input value) of the function call.
+    2.  The **context** contains all other data that is needed for computing the `$` buc arm of the gate correctly.
+
+As a tree, a gate looks like the following:
+
+```
+[$ [sample context]]
+
+       gate
+      /    \
+     $      .
+           / \
+     sample   context
+```
+
+Like all arms, `$` buc is computed with its parent core as the subject.  When `$` buc is computed, the resulting value is called the “product” of the gate.  No other data is used to calculate the product other than the data in the gate itself.
+
+We will always call the values supplied to the gate the “sample” since we will later discover that this technical meaning (`[battery [sample context]]`) holds throughout more advanced cores.
+
 #### Exercise:  Another Way to Calculate a Factorial
 
 Let's revisit our factorial code from above:
@@ -456,11 +484,190 @@ Even more compactly, `(add counter 1)` can be replaced by the Nock increment run
 
 (Remember that sugar syntax like `$()` does not affect code efficiency, merely visual layout.)
 
+#### The `$` Buc Arm
+
+The (only) arm of a gate encodes the instructions for the Hoon function in question.
+
+```hoon
+> =inc |=(a=@ (add 1 a))
+
+> (inc 5)
+6
+```
+
+The pretty printer represents the `$` buc arm of `inc` as `1.yop`.  To see the actual noun of the `$` buc arm, enter `+2:inc` into the Dojo:
+
+```hoon
+> +2:inc
+[8 [9 36 0 8.191] 9 2 10 [6 [7 [0 3] 1 1] 0 14] 0 2]
+```
+
+This is un-computed Nock. You don't need to understand any of this, except that code and data are homoiconic—they are in a sense the same for Urbit programs.
+
+It's worth pointing out that the arm named `$` buc can be used like any other name.  We can compute `$` buc directly with `$:inc` in the Dojo:
+
+```hoon
+> $:inc
+1
+```
+
+This result may seem a bit strange.  We didn't call `inc` or in any other way pass it a number.  Yet using `$` buc to evaluate `inc`'s arm seems to work—sort of, anyway.  Why is it giving us `1` as the return value?  We can answer this question after we understand gate samples a little better.
+
+#### The Sample
+
+The sample of a gate is the address reserved for storing the argument(s) to the Hoon function.  Although we don't know about addressing yet, you saw above that `+2` referred to the battery.  The sample is always at the head of the gate's tail, `+6`.  (We'll look at addressing in more depth in [the next module](./G-trees.md).)
+
+Let's look at the gate for inc again, paying particular attention to its sample:
+
+```hoon
+> inc
+< 1.mgz
+  [ a=@
+    [our=@p now=@da eny=@uvJ]
+    <17.bny 33.ehb 14.dyd 53.vlb 77.lrt 232.oiq 51.qbt 123.zao 46.hgz 1.pnw %140>
+  ]
+>
+```
+
+We see `a=@`.  This may not be totally clear, but at least the `@` should make a little sense.  This is the pretty-printer's way of indicating an atom with the face `a`.  Let's take a closer look:
+
+```hoon
+> +6:inc
+a=0
+```
+
+We see now that the sample of `inc` is the value `0`, and has `a` as a face.  This is a placeholder value for the function argument.  If you evaluate the `$` buc arm of `inc` without passing it an argument the placeholder value is used for the computation, and the return value will thus be `0+1`:
+
+```hoon
+> $:inc
+1
+```
+
+The placeholder value, as you saw in the previous module, is sometimes called the bunt value.  The bunt value is determined by the input type; for `@` atoms the bunt value is typically `0`.
+
+The face value of `a` comes from the way we defined the gate above:  `|=(a=@ (add 1 a))`.  This was so we can use `a` to refer to the sample to generate the product with `(add 1 a)`.
+
+#### The Context
+
+The context of a gate contains other data that may be necessary for the `$` buc arm to evaluate correctly.  The context is always located at the tail of the tail of the gate, i.e., `+7` of the gate.  There is no requirement for the context to have any particular arrangement, though often it does.
+
+Let's look at the context of inc:
+
+```hoon
+> +7:inc
+[ [ our=~nec
+    now=~2022.6.21..19.26.59..9016
+      eny
+    0v304.vhjvs.406g0.bn6ph.ggd02.buadd.2lot0.va6q0.fiqb1.a96gj.9jmb2.6kk07.5d75s.thpbg.9idrt.vmg9j.e748l.fea0l.7ckcf.ieesj.7q6lr
+  ]
+  <17.bny 33.ehb 14.dyd 53.vlb 77.lrt 232.oiq 51.qbt 123.zao 46.hgz 1.pnw %140>
+]
+```
+
+This is the default Dojo subject from before we put `inc` into the subject. The `|=` bartis expression defines the context as whatever the subject is.  This guarantees that the context has all the information it needs to have for the `$` buc arm to work correctly.
+
+#### Gates Define Functions of the Sample
+
+The value of a function's output depends solely upon the input value.  This is one of the features that make functions desirable in many programming contexts.  It's worth going over how Hoon function calls implement this feature.
+
+In Hoon, one can use `(gate arg)` syntax to make a function call. For example:
+
+```hoon
+> (inc 234)
+235
+```
+
+The name of the gate is `inc`.  How is the `$` buc arm of inc evaluated?  When a function call occurs, a copy of the `inc` gate is created, but with one modification:  the sample is replaced with the function argument.  Then the `$` buc arm is computed against this modified version of the `inc` gate.
+
+Remember that the default or “bunt” value of the sample of inc is `0`.  In the function call above, a copy of the `inc` gate is made but with a sample value of `234`.  When `$` buc is computed against this modified core, the product is `235`.
+
+Notice that neither the arm nor the context is modified before the arm is evaluated.  That means that the only part of the gate that changes before the arm evaluation is the sample.  Hence, we may understand each gate as defining a function whose argument is the sample.  If you call a gate with the same sample, you'll get the same value returned to you every time.
+
+Let's unbind inc to keep the subject tidy:
+
+```hoon
+> =inc
+
+> inc
+-find.inc
+```
+
+#### Modifying the Context of a Gate
+
+It is possible to modify the context of a gate when you make a function call; or, to be more precise, it's possible to call a _mutant copy_ of the gate in which the context is modified.  To illustrate this let's use another example gate.  Let's write a gate which uses a value from the context to generate the product.  Bind `b` to the value 10:
+
+```hoon
+> =b 10
+
+> b
+10
+```
+
+Now let's write a gate called `ten` that adds `b` to the input value:
+
+```hoon
+> =ten |=(a=@ (add a b))
+
+> (ten 10)
+20
+
+> (ten 20)
+30
+
+> (ten 25)
+35
+```
+
+We can unbind `b` from the Dojo subject, and `ten` works just as well because it's using a copy of `b` stored its context:
+
+```hoon
+> =b
+
+> (ten 15)
+25
+
+> (ten 35)
+45
+
+> b.+14.ten
+10
+```
+
+We can use `ten(b 25)` to produce a variant of `ten`.  Calling this mutant version of ten causes a different value to be returned than we'd get with a normal `ten` call:
+
+```hoon
+> (ten(b 25) 10)
+35
+
+> (ten(b 1) 25)
+26
+
+> (ten(b 75) 100)
+175
+```
+
+Before finishing the lesson let's unbind ten:
+
+```hoon
+> =ten
+```
+
 ### Recursion
 
 _Recursion_ refers to a return to the same logical point in a program again and again.  It's a common pattern for solving certain problems in most programming languages, and Hoon is no exception.
 
-In a formal sense, we have to make sure that there is always a base case, a way of actually ending the recursion—if there isn't, we end up with an [infinite loop](https://en.wikipedia.org/wiki/Infinite_loop)!  Children's songs like [“Yon Yonson”](https://en.wikipedia.org/wiki/Yon_Yonson) or [“The Song That Never Ends”](https://en.wikipedia.org/wiki/The_Song_That_Never_Ends) sometimes rely on such recursive humor.
+In the following code, the `|-` barhep trap serves as the point of recursion, and the return to that point (with changes) is indicated by the `%=` cenhep.  All this code does is count to the given number, then return that number.
+
+```hoon
+|=  n=@ud
+=/  index  0
+|-
+?:  =(index n)
+  index
+%=($ index +(index))
+```
+
+In a formal sense, we have to make sure that there is always a base case, a way of actually ending the recursion—if there isn't, we end up with an [infinite loop](https://en.wikipedia.org/wiki/Infinite_loop)!  Some children's songs like [“Yon Yonson”](https://en.wikipedia.org/wiki/Yon_Yonson) or [“The Song That Never Ends”](https://en.wikipedia.org/wiki/The_Song_That_Never_Ends) rely on such recursive humor.
 
 > This is the song that never ends
 > Yes, it goes on and on, my friends
@@ -483,7 +690,7 @@ If you find yourself caught in such a loop, press `Ctrl`+`C` to stop execution.
 
 Recursion can be set up different ways.  A full treatment requires thinking about [algorithmic complexity and efficiency](https://en.wikipedia.org/wiki/Big_O_notation), but we can highlight some good rules of thumb here.
 
-#### Exercise:  The Fibonacci Sequence
+#### Tutorial:  The Fibonacci Sequence
 
 For instance, let's talk about calculating the [Fibonacci sequence](https://en.wikipedia.org/wiki/Fibonacci_sequence), which is a sequence of numbers wherein each is formed by adding the two previous numbers together.  Thus 1, 1, 1+1→2, 1+2→3, 2+3→5, and so forth.  We may write the _n_th Fibonacci number in a generic way as:
 
@@ -610,7 +817,7 @@ and verify that our program correctly produces the sequence of numbers 1, 1, 2, 
 
     - Produce a diagram of how this last implementation yields a Fibonacci sequence for _F_₅, `(fibonacci 5)`.
 
-#### Exercise:  Tail-Call Optimization of the Factorial Gate
+#### Tutorial:  Tail-Call Optimization of the Factorial Gate
 
 The last factorial gate we produced looked like this:
 
@@ -677,7 +884,7 @@ But the Hoon compiler, like most compilers, is smart enough to notice when the l
 
     We simply multiply `t` and `n` to produce the new value of `t`, and then decrement `n` before repeating. Since this `$` call is the final and solitary thing that is run in the default case and since we are doing all computation before the call, this version is properly tail-recursive. We don't need to do anything to the result of the recursion except recurse it again. That means that each iteration can be replaced instead of held in memory.
 
-#### Exercise:  The Ackermann Function
+#### Tutorial:  The Ackermann Function
 
 The [Ackermann function](https://en.wikipedia.org/wiki/Ackermann_function) is one of the earliest examples of a function that is both totally computable—meaning that it can be solved—and not primitively recursive—meaning it can not be rewritten in an iterative fashion.
 

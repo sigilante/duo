@@ -132,7 +132,7 @@ It's up to you to decide how to handle this result, however!  Perhaps a better o
 
 (`@s` signed integer math is discussed below.)
 
-#### Floating-point specific operations
+### Floating-point specific operations
 
 As with aura conversion, the standard mathematical operators don't work for `@rs`:
 
@@ -179,6 +179,74 @@ The `++equ:rs` arm checks for complete equality of two values.  The downside of 
 - Produce an arm which check for two values to be close to each other by an absolute amount.  It should accept three values:  `a`, `b`, and `atol`.  It should return the result of the following comparison:
 
     <img src="https://latex.codecogs.com/svg.image?\large&space;|a-b|&space;\leq&space;\texttt{atol}" title="https://latex.codecogs.com/svg.image?\large |a-b| \leq \texttt{atol}" />
+
+
+### `++rs` as a Door
+
+What is `++rs`?  It's a door with 21 arms:
+
+```hoon
+> rs
+<21|hqd [r=?(%d %n %u %z) <51.qbt 123.ppa 46.hgz 1.pnw %140>]>
+```
+
+The battery of this core, pretty-printed as `21|hqd`, has 21 arms that define functions specifically for `@rs` atoms.  One of these arms is named `++add`; it's a different `add` from the standard one we've been using for vanilla atoms, and thus the one we used above.  When you invoke `add:rs` instead of just `add` in a function call, (1) the `rs` door is produced, and then (2) the name search for `add` resolves to the special `add` arm in `rs`.  This produces the gate for adding `@rs` atoms:
+
+```hoon
+> add:rs
+<1.uka [[a=@rs b=@rs] <21.hqd [r=?(%d %n %u %z) <51.qbt 123.ppa 46.hgz 1.pnw %140>]>]>
+```
+
+What about the sample of the `rs` door?  The pretty-printer shows `r/?($n $u $d $z)`.  The `rs` sample can take one of four values: `%n`, `%u`, `%d`, and `%z`.  These argument values represent four options for how to round `@rs` numbers:
+
+- `%n` rounds to the nearest value
+- `%u` rounds up
+- `%d` rounds down
+- `%z` rounds to zero
+
+The default value is `%z`, round to zero.  When we invoke `++add:rs` to call the addition function, there is no way to modify the `rs` door sample, so the default rounding option is used.  How do we change it?  We use the `~( )` notation: `~(arm door arg)`.
+
+Let's evaluate the `add` arm of `rs`, also modifying the door sample to `%u` for 'round up':
+
+```hoon
+> ~(add rs %u)
+<1.uka [[a=@rs b=@rs] <21.hqd [r=?(%d %n %u %z) <51.qbt 123.ppa 46.hgz 1.pnw %140>]>]>
+```
+
+This is the gate produced by `add`, and you can see that its sample is a pair of `@rs` atoms. But if you look in the context you'll see the `rs` door. Let's look in the sample of that core to make sure that it changed to `%u`. We'll use the wing `+6.+7` to look at the sample of the gate's context:
+
+```hoon
+> +6.+7:~(add rs %u)
+r=%u
+```
+
+It did indeed change.  We also see that the door sample uses the face `r`, so let's use that instead of the unwieldy `+6.+7`:
+
+```hoon
+> r:~(add rs %u)
+%u
+```
+
+We can do the same thing for rounding down, `%d`:
+
+```hoon
+> r:~(add rs %d)
+%d
+```
+
+Let's see the rounding differences in action. Because `~(add rs %u)` produces a gate, we can call it like we would any other gate:
+
+```hoon
+> (~(add rs %u) .3.14159265 .1.11111111)
+.4.252704
+
+> (~(add rs %d) .3.14159265 .1.11111111)
+.4.2527037
+```
+
+This difference between rounding up and rounding down might seem strange at first.  There is a difference of 0.0000003 between the two answers.  Why does this gap exist?  Single-precision floats are 32-bit and there's only so many distinctions that can be made in floats before you run out of bits.
+
+Just as there is a door for `@rs` functions, there is a Hoon standard library door for `@rd` functions (double-precision 64-bit floats), another for `@rq` functions (quad-precision 128-bit floats), and one more for `@rh` functions (half-precision 16-bit floats).
 
 
 ##  Signed Integer Mathematics

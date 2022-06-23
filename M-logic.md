@@ -2,14 +2,32 @@
 title: Gates
 nodes: 184
 objectives:
-  - "Explain what an Urbit ship is."
-  - "Distinguish a fakeship from a liveship."
-  - "Pronounce ASCII characters per standard Hoon developer practice."
+  - "Produce loobean expressions."
+  - "Reorder conditional arms."
+  - "Switch against a union with or without default."
 ---
 
 #   Conditional Logic
 
-Although you've been using various of the `?` wut runes for a while now, let's wrap up some loose ends.
+Although you've been using various of the `?` wut runes for a while now, let's wrap up some loose ends.  This module will cover the nature of loobean logic and the rest of the `?` wut runes.
+
+
+##  Loobean Logic
+
+Throughout Hoon School, you have been using `%.y` and `%.n`, often implicitly, every time you have asked a question like `?:  =(5 4)`.  The `=()` expression returns a loobean, a member of the type union `?(%.y %.n)`.  (There is a proper aura `@f` but unfortunately it can't be used outside of the compiler.)  These can also be written as `&` (`%.y`, true) and `|` (`%.n`, false), which is common in older code but should be avoided for clarity in your own compositions.
+
+What are the actual values of these, _sans_ formatting?
+
+```hoon
+> `@`%.y
+0
+
+> `@`%.n
+1
+```
+
+Pretty much all conditional operators rely on loobeans, although it is very uncommon for you to need to unpack them.
+
 
 ##  Making Choices
 
@@ -50,23 +68,6 @@ There are also two long-form decision-making runes, which we will call [_switch 
       %3  3
     ==
     ```
-
-##  Loobean Logic
-
-Throughout Hoon School, you have been using `%.y` and `%.n`, often implicitly, every time you have asked a question like `?:  =(5 4)`.  The `=()` expression returns a loobean, a member of the type union `?(%.y %.n)`.  (There is a proper aura `@f` but unfortunately it can't be used outside of the compiler.)  These can also be written as `&` (`%.y`, true) and `|` (`%.n`, false), which is common in older code but should be avoided for clarity in your own compositions.
-
-What are the actual values of these, _sans_ formatting?
-
-```hoon
-> `@`%.y
-0
-
-> `@`%.n
-1
-```
-
-Pretty much all conditional operators rely on loobeans, although it is very uncommon for you to need to unpack them.
-
 
 ##  Logical Operators
 
@@ -154,29 +155,23 @@ The logical operation `NOR` _p_ ↓ _q_ produces true if both operands are false
 
 - Implement `NAND` as a gate in Hoon.
 
+#### Exercise:  Implement a Piecewise Boxcar Function
 
-##  Pattern Matching and Assertions
+The boxcar function is a piecewise mathematical function which is equal to zero for inputs less than zero and one for inputs greater than or equal to zero.  We implemented the similar Heaviside function [previously](./B-syntax.md) using the `?:` wutcol rune.
 
-As values get passed around and checked at various points, the Hoon compiler tracks what the possible data structure or mold looks like.
+- Compose a gate which implements the boxcar function,
 
+    <img src="https://latex.codecogs.com/svg.image?\large&space;\text{boxcar}(x):=\begin{pmatrix}1,&space;&&space;10&space;\leq&space;x&space;<&space;20&space;\\0,&space;&&space;\text{otherwise}&space;\\\end{pmatrix}" title="https://latex.codecogs.com/svg.image?\large \text{boxcar}(x):=\begin{matrix}1, & 10 \leq x < 20 \\0, & \text{otherwise} \\\end{matrix}" />
 
-One consequence of 
+    <!--
+    $$
+    \text{boxcar}(x)
+    :=
+    \begin{matrix}
+    1, & 10 \leq x < 20 \\
+    0, & \text{otherwise} \\
+    \end{matrix}
+    $$
+    -->
 
-- [`?>` wutgar](https://urbit.org/docs/hoon/reference/rune/wut#-wutgar) is a positive assertion (`%.y%` or crash).
-
-- [`?<` wutgal](https://urbit.org/docs/hoon/reference/rune/wut#-wutgal) is a negative assertion (`%.n` or crash).
-
-- [`?~` wutsig](https://urbit.org/docs/hoon/reference/rune/wut#-wutket) asserts non-null.
-
-- [`?^` wutket](https://urbit.org/docs/hoon/reference/rune/wut#-wutket) asserts cell.
-
-- [`?@` wutpat](https://urbit.org/docs/hoon/reference/rune/wut#-wutpat) asserts atom.
-
-Logical operators:
-
-Pattern matching:
-
-- [`?=` wuttis](https://urbit.org/docs/hoon/reference/rune/wut#-wuttis) tests for a pattern match in type, someday to be superseded or supplemented by a planned `?#` wuthax rune.
-
-
-#### Exercise:  Implement the Boxcar Function
+    Use Hoon logical operators to compress the logic into a single statement using at least one `AND` or `OR` operation.

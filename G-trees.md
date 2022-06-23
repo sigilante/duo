@@ -11,9 +11,9 @@ objectives:
   - "Convert between kinds of lists (e.g. tapes)."
   - "Diagram lists as binary trees."
   - "Operate on list elements using `snag`, `find`, `weld`, etc."
-  - "Use assertions to enforce type constraints."
-  - "Identify a `lest` (as opposed to a list)."
-  - "Produce a type arm."
+  - "Explain how Hoon manages the subject and wing search paths."
+  - "Explain how to skip to particular matches in a wing search path through the subject."
+  - "Identify common Hoon patterns: batteries, and doors, arms, wings, and legs."
 ---
 
 #   Trees, Addressing, and Lists
@@ -108,6 +108,8 @@ Most of any possible tree will be unoccupied for any actual data structure.  For
     ```
 
 ### Tuples as Trees
+
+What we've been calling a running cell would more conventionally be named a _tuple_, so we'll switch to that syntax now that the idea is more familiar.  Basically its a cell series which doesn't necessarily end in `~`.
 
 Given the cell `[1 2 3 4 ~]` (or equivalently `~[1 2 3 4]`, an irregular form for a null-terminated tuple or list), what tree address does each value occupy?
 
@@ -232,7 +234,7 @@ Much like relative directions, one can also state “left, left, right, left” 
 
 ![](binary-tree-lark.png)
 
-Lark notation can locate a position in a tree of any size.  However, it is most commonly used to grab the head or tail of a cell, e.g. in the _type spear_:
+Lark notation can locate a position in a tree of any size.  However, it is most commonly used to grab the head or tail of a cell, e.g. in the _type spear_ (on which [more later](./L2-struct.md)):
 
 ```hoon
 -:!>('hello Mars')
@@ -536,22 +538,9 @@ It's far more common to just use a trap, but you will see `$` buc used to manipu
 --
 ``` 
 
-where `=|` tisbar means to add the sample to the current subject.
+where `=|` tisbar means to add its sample to the current subject with the given face.
 
 Similarly, `|-` barhep produces a core with one arm `$`.  How could you write that in terms of `|%` and `++`?
-
-TODO
-https://urbit.org/docs/hoon/hoon-school/nouns#nouns-as-binary-trees
-https://urbit.org/docs/hoon/hoon-school/lists
-
-### Beyond the Sample
-
-TODO
-[battery payload]
-[battery [sample context]]
-sample
-+6
-
 
 #### Example:  Number to Digits
 
@@ -709,6 +698,16 @@ There are a couple of sometimes-useful `list` builders:
     "aaaaaaaa"
     > (reap 5 (gulf 5 10))  
     ~[~[5 6 7 8 9 10] ~[5 6 7 8 9 10] ~[5 6 7 8 9 10] ~[5 6 7 8 9 10] ~[5 6 7 8 9 10]]  
+    ```
+
+- [`++roll`](https://urbit.org/docs/hoon/reference/stdlib/2b#roll) takes a list and a gate, and accumulates a value of the list items using that gate. For example, if you want to add or multiply all the items in a list of atoms, you would use roll:
+
+    ```hoon
+    > (roll `(list @)`~[11 22 33 44 55] add)
+    165
+
+    > (roll `(list @)`~[11 22 33 44 55] mul)
+    19.326.120
     ```
 
 Once you have a `list` (including a `tape`), there are a lot of manipulation tools you can use to extract data from it or modify it:

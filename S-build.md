@@ -38,6 +38,8 @@ compile-time
 etc.
 
 mint, ream, vast, etc.
+++ut
+
 
 ##  Affordances
 
@@ -79,3 +81,36 @@ etc.
 jamfiles
 
 boot process
+
+  - slam, cook, virtualization
+  - `++ut`/`++ride`
+  - Jonathan/doccords could document compiler
+
+
+it is possible, through very rarely would I imagine it is the best way to do something
+you can acquire the compiled form by using mint
+or slap:
+https://urbit.org/docs/hoon/reference/stdlib/5c#slap
+and then you can save that resulting noun to a file in dojo, and then import it later with /* and run (cue ..) on it
+
+
+~tiller-tolbus
+5:25 PM
+anyone know how to get a JSON file loaded into the Dojo as a json noun?
+
+~tinnus-napbus
+5:31 PM
+if you commit the .json to a desk
+you can then do -read %x our %base da+now /foobar/json
+
+3:13 PM
+if it's a gate, call it with .*(gate [%9 2 %10 [6 [%1 sample]] %0 1])
+.*(add [%9 2 %10 [6 [%1 [2 2]]] %0 1])
+4
+if it's a core with one arm producing a gate, .*(gate [%9 2 %10 [6 [%1 sample]] %9 2 %0 1])
+=+  |%  ++  foo  add  --  .*(- [%9 2 %10 [6 [%1 [2 2]]] %9 2 %0 1])
+4
+if the core has multiple arms, the axes will be different (and depend on the names)
+
+to list all desks:
+.^((set desk) %cd %)
